@@ -1,4 +1,4 @@
-# RepSensei — Hackathon Submission Fields
+# FitSenseAI — Hackathon Submission Fields
 
 > Copy-paste these into the Devpost submission form.
 
@@ -7,7 +7,7 @@
 ## FIELD 1: Project Name (max 60 chars)
 
 ```
-RepSensei — AI Gym Sensei
+FitSenseAI — AI Gym Coach
 ```
 
 ---
@@ -29,7 +29,7 @@ Everyone wants to work out correctly but can't afford a personal trainer. Generi
 
 ## What it does
 
-**RepSensei** is a real-time AI gym trainer that:
+**FitSenseAI** is a real-time AI gym trainer that:
 
 - 📷 **Watches your form** using MoveNet Thunder pose detection (17 keypoints at 15+ FPS) running entirely in your browser via TensorFlow.js
 - 📐 **Scores every rep** 0–100% using a custom angle-constraint engine per movement phase (top/bottom/eccentric/concentric) across **22 exercises**
@@ -72,7 +72,7 @@ Everyone wants to work out correctly but can't afford a personal trainer. Generi
 - Gemini 2.5 Flash's short-context coaching responses (150 tokens) are fast enough for real-time use when the system prompt is tightly constrained
 - Building bilingual AI products for Indian users requires more than just language translation — tone, idioms, and energy all need to match the cultural context
 
-## What's next for RepSensei
+## What's next for FitSenseAI
 
 - **Google Cloud Run deployment** for scalable global access
 - **Gemini Live API integration** — replace the current request-response pattern with true streaming live audio for sub-500ms latency
@@ -123,4 +123,4 @@ https://github.com/Akum030/formfit
 
 ## SUBMISSION TEXT — Project Story Summary
 
-RepSensei is a Live Agent that breaks the text-box paradigm: it **sees** your body through MoveNet pose detection, **hears** you speak in Hindi or English through Sarvam AI STT, and **speaks back** through Sarvam AI TTS — interrupting you mid-workout when your form breaks down, just like a human trainer would. Gemini 2.5 Flash powers all coaching intelligence, processing real-time form scores and user speech to generate contextually appropriate, bilingual corrections with the personality of a no-nonsense desi gym trainer.
+FitSenseAI is a Live Agent that breaks the text-box paradigm: it **sees** your body through MoveNet pose detection, **hears** you speak in Hindi or English through Sarvam AI STT, and **speaks back** through Sarvam AI TTS — interrupting you mid-workout when your form breaks down, just like a human trainer would. Gemini 2.5 Flash powers all coaching intelligence, processing real-time form scores and user speech to generate contextually appropriate, bilingual corrections with the personality of a no-nonsense desi gym trainer.

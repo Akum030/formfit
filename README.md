@@ -1,8 +1,8 @@
-# RepSensei 🥋 — AI Gym Sensei
+# FitSenseAI 🥷 — AI Gym Coach
 
 **Live Agent** for the [Gemini Live Agent Challenge](https://geminiliveagentchallenge.devpost.com/)
 
-RepSensei is a **real-time AI personal trainer** that watches your workout through the webcam, scores your form using pose detection, and coaches you in **Hindi or English** using a live voice agent that **interrupts mid-exercise** when your form breaks down — just like a real trainer.
+FitSenseAI is a **real-time AI personal trainer** that watches your workout through the webcam, scores your form using pose detection, and coaches you in **Hindi or English** using a live voice agent that **interrupts mid-exercise** when your form breaks down — just like a real trainer.
 
 🌐 **Live Demo:** https://fitsenseai.aidhunik.com  
 📦 **GitHub:** https://github.com/Akum030/formfit

@@ -181,7 +181,7 @@ export function HomePage() {
           <h1 className="text-5xl sm:text-6xl md:text-7xl font-black text-white mb-6 leading-[1.08] animate-fade-in-up anim-delay-100">
             Your Personal
             <br />
-            <span className="hero-gradient-text">AI Gym Sensei</span>
+            <span className="hero-gradient-text">FitSenseAI</span>
           </h1>
 
           {/* Subtitle */}
@@ -313,7 +313,7 @@ export function HomePage() {
       {/* ═══════ FOOTER ═══════ */}
       <footer className="border-t border-white/[0.04] py-8">
         <div className="max-w-6xl mx-auto px-6 text-center">
-          <p className="text-white/15 text-sm">RepSensei · Hackathon 2026 · Built with ❤️ and AI</p>
+          <p className="text-white/15 text-sm">FitSenseAI · Hackathon 2026 · Built with ❤️ and AI</p>
         </div>
       </footer>
     </div>
@@ -366,7 +366,7 @@ function OnboardingModal({ onComplete }: { onComplete: (name: string) => void })
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center text-3xl mx-auto mb-4 shadow-xl shadow-emerald-500/30">
             🏋️
           </div>
-          <h2 className="text-2xl font-black text-white mb-2">Welcome to RepSensei</h2>
+          <h2 className="text-2xl font-black text-white mb-2">Welcome to FitSenseAI</h2>
           <p className="text-white/35 text-sm">Set up your profile to track progress and personalize coaching</p>
         </div>
 

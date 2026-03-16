@@ -14,7 +14,7 @@ test.describe('AI Gym Trainer — E2E', () => {
       }
     }
     // Title visible
-    await expect(page.getByRole('heading', { name: /AI Gym Sensei/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /FitSenseAI/i })).toBeVisible();
     // Exercise cards visible
     await expect(page.locator('text=Squat')).toBeVisible();
     await expect(page.locator('text=Push-up')).toBeVisible();

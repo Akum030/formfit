@@ -45,11 +45,12 @@ interface SessionControlsProps {
 }
 
 const EXERCISE_ICONS: Record<string, string> = {
-  squat: '🦵',
-  pushup: '💪',
-  lunge: '🏃',
-  bicep_curl: '💪',
-  shoulder_press: '🏋️',
+  squat: '🦵', pushup: '💪', lunge: '🏃', jumping_jacks: '⭐', high_knees: '🔥',
+  glute_bridge: '🍑', calf_raise: '🦶', tricep_dip: '🪑', wall_sit: '🧱',
+  sumo_squat: '🏯', standing_crunch: '🎯', leg_raise: '🦿',
+  bicep_curl: '🦾', shoulder_press: '🏋️', lateral_raise: '🪽', front_raise: '🫴',
+  dumbbell_row: '🚣', hammer_curl: '🔨', deadlift: '🏗️', goblet_squat: '🏆',
+  overhead_tricep: '🙆',
 };
 
 const PHASE_CONFIG: Record<RepPhase, { label: string; color: string; icon: string }> = {
@@ -212,50 +213,67 @@ function ExerciseSelector({ exercises, selectedId, onSelect, onStart, isModelRea
   onStart: () => void; isModelReady: boolean;
 }) {
   return (
-    <div className="glass-card p-4 space-y-4">
+    <div className="glass-card p-4 space-y-3">
+      {/* Heading */}
       <div className="flex items-center gap-2">
         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500/30 to-cyan-500/30 flex items-center justify-center text-lg">
           🏋️
         </div>
         <div>
           <h3 className="text-white font-bold text-sm">Choose Exercise</h3>
-          <p className="text-white/40 text-xs">Select to begin your AI-coached workout</p>
+          <p className="text-white/40 text-xs">Select from 22 exercises below</p>
         </div>
       </div>
 
-      <div className="grid gap-2">
-        {exercises.map((ex) => {
-          const isSelected = selectedId === ex.id;
-          return (
-            <button
-              key={ex.id}
-              onClick={() => onSelect(ex.id)}
-              className={`group relative text-left p-3 rounded-xl transition-all duration-200 ${
-                isSelected
-                  ? 'bg-gradient-to-r from-emerald-500/20 to-cyan-500/15 border border-emerald-500/40 shadow-[0_0_20px_rgba(52,211,153,0.1)]'
-                  : 'bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] hover:border-white/[0.12]'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-xl">{EXERCISE_ICONS[ex.id] || '🏋️'}</span>
-                <div className="flex-1">
-                  <div className={`font-semibold text-sm ${isSelected ? 'text-white' : 'text-white/80'}`}>
-                    {ex.name}
-                  </div>
-                  <div className="text-white/40 text-xs mt-0.5">
-                    {ex.category} · {ex.defaultSets}×{ex.defaultReps} · {ex.restSeconds}s rest
-                  </div>
-                </div>
-                {isSelected && (
-                  <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
-                    <span className="text-white text-xs">✓</span>
-                  </div>
-                )}
-              </div>
-            </button>
-          );
-        })}
+      {/* Dropdown */}
+      <div className="relative">
+        <select
+          value={selectedId ?? ''}
+          onChange={(e) => e.target.value && onSelect(e.target.value)}
+          className="w-full appearance-none px-4 py-3 pr-10 rounded-xl
+            bg-white/[0.05] border border-white/[0.12]
+            text-white text-sm font-medium
+            focus:outline-none focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/15
+            hover:bg-white/[0.08] transition-all duration-200 cursor-pointer"
+          style={{ colorScheme: 'dark' }}
+        >
+          <option value="" disabled className="bg-gray-900 text-white/40">— pick an exercise —</option>
+          {/* Group by category */}
+          {Array.from(new Set(exercises.map(e => e.category))).map(cat => (
+            <optgroup key={cat} label={cat} className="bg-gray-900 text-white/60 font-semibold">
+              {exercises.filter(e => e.category === cat).map(ex => (
+                <option key={ex.id} value={ex.id} className="bg-gray-900 text-white py-1">
+                  {EXERCISE_ICONS[ex.id] ?? '🏋️'} {ex.name}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+        {/* Chevron icon */}
+        <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/30">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </div>
       </div>
+
+      {/* Selected exercise info chip */}
+      {selectedId && (() => {
+        const ex = exercises.find(e => e.id === selectedId);
+        if (!ex) return null;
+        return (
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+            <span className="text-lg">{EXERCISE_ICONS[ex.id] ?? '🏋️'}</span>
+            <div className="flex-1 min-w-0">
+              <div className="text-white font-semibold text-sm truncate">{ex.name}</div>
+              <div className="text-emerald-400/70 text-xs">{ex.category} · {ex.defaultSets} sets × {ex.defaultReps} reps · {ex.restSeconds}s rest</div>
+            </div>
+            <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
+              <span className="text-white text-xs">✓</span>
+            </div>
+          </div>
+        );
+      })()}
 
       <button
         onClick={onStart}
@@ -269,7 +287,7 @@ function ExerciseSelector({ exercises, selectedId, onSelect, onStart, isModelRea
           disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:translate-y-0
           transition-all duration-200"
       >
-        {!selectedId ? 'Select an exercise' : !isModelReady ? 'Loading AI model...' : '🚀 Start AI Coaching'}
+        {!selectedId ? 'Select an exercise first' : !isModelReady ? 'Loading AI model...' : '🚀 Start AI Coaching'}
       </button>
     </div>
   );

@@ -22,8 +22,8 @@ export function Navbar() {
             <span className="text-xl">🏋️</span>
           </div>
           <div className="hidden sm:block">
-            <span className="text-lg font-extrabold text-white">Rep</span>
-            <span className="text-lg font-extrabold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">Sensei</span>
+            <span className="text-lg font-extrabold text-white">FitSense</span>
+            <span className="text-lg font-extrabold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">AI</span>
           </div>
         </Link>
 
