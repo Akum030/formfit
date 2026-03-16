@@ -1,0 +1,16 @@
+{
+  "name": "ai-gym-trainer",
+  "version": "1.0.0",
+  "description": "Real-time AI-powered gym coach using **MoveNet** pose detection, **Gemini** coaching intelligence, and **Sarvam AI** continuous duplex voice.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@playwright/test": "^1.58.2"
+  }
+}

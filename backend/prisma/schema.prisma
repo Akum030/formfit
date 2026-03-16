@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String    @id @default(uuid())
+  name       String    @default("Anonymous")
+  goals      String?
+  experience String    @default("beginner") // beginner | intermediate | advanced
+  createdAt  DateTime  @default(now())
+  sessions   Session[]
+}
+
+model Session {
+  id            String       @id @default(uuid())
+  userId        String?
+  user          User?        @relation(fields: [userId], references: [id])
+  exerciseId    String       // references ExerciseDefinition ID
+  status        String       @default("active") // active | paused | completed
+  startedAt     DateTime     @default(now())
+  endedAt       DateTime?
+  totalReps     Int          @default(0)
+  totalSets     Int          @default(0)
+  targetReps    Int          @default(12)
+  avgFormScore  Float?
+  aiSummary     String?
+  setLogs       SetLog[]
+}
+
+model SetLog {
+  id           String   @id @default(uuid())
+  sessionId    String
+  session      Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  setNumber    Int
+  repsCount    Int      @default(0)
+  avgFormScore Float?
+  duration     Int?     // seconds
+  completedAt  DateTime @default(now())
+  repLogs      RepLog[]
+}
+
+model RepLog {
+  id        String   @id @default(uuid())
+  setLogId  String
+  setLog    SetLog   @relation(fields: [setLogId], references: [id], onDelete: Cascade)
+  repNumber Int
+  formScore Float
+  issues    String?  // JSON string array
+  timestamp DateTime @default(now())
+}
