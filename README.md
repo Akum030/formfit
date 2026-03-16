@@ -1,65 +1,91 @@
-# AI Gym Trainer 🏋️
+# RepSensei 🥋 — AI Gym Sensei
 
-Real-time AI-powered gym coach using **MoveNet** pose detection, **Gemini** coaching intelligence, and **Sarvam AI** continuous duplex voice.
+**Live Agent** for the [Gemini Live Agent Challenge](https://geminiliveagentchallenge.devpost.com/)
+
+RepSensei is a **real-time AI personal trainer** that watches your workout through the webcam, scores your form using pose detection, and coaches you in **Hindi or English** using a live voice agent that **interrupts mid-exercise** when your form breaks down — just like a real trainer.
+
+🌐 **Live Demo:** https://fitsenseai.aidhunik.com  
+📦 **GitHub:** https://github.com/Akum030/formfit
+
+---
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                     BROWSER                              │
-│  ┌──────────┐  ┌───────────┐  ┌──────────────────┐     │
-│  │ Webcam   │→ │ MoveNet   │→ │ Form Scoring     │     │
-│  │ Camera   │  │ TF.js     │  │ Angle + Phase    │     │
-│  └──────────┘  └───────────┘  └──────┬───────────┘     │
-│                                       │                  │
-│  ┌──────────┐                  ┌──────▼───────────┐     │
-│  │ Mic +    │◀──── WebSocket ──│ Canvas Overlay    │     │
-│  │ Speaker  │────► Audio ────►│ Skeleton + Score  │     │
-│  └──────────┘                  └──────────────────┘     │
-└──────────────────────────┬──────────────────────────────┘
-                           │ REST + WebSocket
-┌──────────────────────────▼──────────────────────────────┐
-│                     BACKEND (Node.js)                    │
-│  ┌──────────────┐  ┌──────────┐  ┌──────────────┐      │
-│  │ Coach Engine │  │ Gemini   │  │ Sarvam AI    │      │
-│  │ Rate-limit   │→ │ Flash    │  │ STT / TTS    │      │
-│  │ + Trigger    │  │ Coaching │  │ Duplex Voice │      │
-│  └──────────────┘  └──────────┘  └──────────────┘      │
-│  ┌──────────────┐  ┌──────────────────────────────┐     │
-│  │ Sessions API │  │ Prisma + SQLite/PostgreSQL   │     │
-│  └──────────────┘  └──────────────────────────────┘     │
-└─────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                        BROWSER (React + Vite)                     │
+│                                                                    │
+│  ┌──────────┐   ┌───────────────────┐   ┌──────────────────────┐ │
+│  │  Webcam  │──▶│  MoveNet Thunder  │──▶│  Angle-Based Form    │ │
+│  │  Camera  │   │  (TensorFlow.js)  │   │  Scoring Engine      │ │
+│  │  640×480 │   │  17 Keypoints     │   │  Phase Detection     │ │
+│  └──────────┘   │  15+ FPS          │   │  Rep Counter         │ │
+│                 └───────────────────┘   └──────────┬───────────┘ │
+│                                                     │ REST Events  │
+│  ┌──────────────────────────────┐     ┌────────────▼───────────┐ │
+│  │  Mic (MediaRecorder)         │◀────│  Canvas Overlay        │ │
+│  │  WebSocket Audio Stream      │────▶│  Skeleton + Score HUD  │ │
+│  │  Speaker (AudioContext)      │     │  Rep Counter + Phase   │ │
+│  └──────────────────────────────┘     └────────────────────────┘ │
+└────────────────────────────┬─────────────────────────────────────┘
+                             │ REST + WebSocket (ws://)
+┌────────────────────────────▼─────────────────────────────────────┐
+│                  BACKEND (Node.js + Express + TypeScript)          │
+│                                                                    │
+│  ┌──────────────────┐   ┌──────────────────┐   ┌──────────────┐  │
+│  │  CoachEngine     │   │  Gemini 2.5 Flash│   │  Sarvam AI   │  │
+│  │  ─ Rate limiter  │──▶│  ─ Coaching text │   │  ─ STT hi-IN │  │
+│  │  ─ Lang toggle   │   │  ─ Form analysis │   │  ─ TTS hi-IN │  │
+│  │  ─ URGENT intr.  │   │  ─ Fallback chain│   │  ─ bulbul:v2 │  │
+│  └──────────────────┘   └──────────────────┘   └──────────────┘  │
+│                                                                    │
+│  ┌──────────────────┐   ┌──────────────────────────────────────┐  │
+│  │  /ws/voice       │   │  Prisma ORM + SQLite                 │  │
+│  │  Audio ◀──▶ STT  │   │  Users / Sessions / SetLogs / Reps   │  │
+│  │  TTS ──▶ Audio   │   └──────────────────────────────────────┘  │
+│  └──────────────────┘                                              │
+└──────────────────────────────────────────────────────────────────┘
+                             │ Reverse Proxy
+┌────────────────────────────▼─────────────────────────────────────┐
+│           Nginx  ─  fitsenseai.aidhunik.com  (HTTPS/WSS)          │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
-| Pose Detection | MoveNet Thunder (TensorFlow.js) |
-| Form Scoring | Custom angle-constraint engine |
-| AI Coach | Gemini 2.0 Flash |
-| Voice | Sarvam AI (STT: saarika:v2 / TTS: bulbul:v1) |
+| Pose Detection | MoveNet Thunder (TensorFlow.js) — runs in-browser |
+| Form Scoring | Custom angle-constraint engine (per-phase, per-joint) |
+| AI Coach | **Gemini 2.5 Flash** (Google AI SDK) with multi-model fallback chain |
+| Voice STT | **Sarvam AI** saarika:v2.5 — Hindi (hi-IN) default |
+| Voice TTS | **Sarvam AI** bulbul:v2, speaker anushka — Hindi default |
+| Real-time Coaching | WebSocket duplex + CoachEngine with urgent interruption |
 | Frontend | React 18 + TypeScript + Vite + TailwindCSS |
-| Backend | Node.js + Express + TypeScript + WebSocket |
+| Backend | Node.js + Express + TypeScript + WebSocket (ws) |
 | Database | Prisma ORM + SQLite (dev) / PostgreSQL (prod) |
-| Deployment | Docker + docker-compose |
+| Deployment | Docker + docker-compose + Nginx reverse proxy |
+| Domain | https://fitsenseai.aidhunik.com |
 
-## Quick Start
+## Quick Start — Reproducible Testing Instructions
 
 ### Prerequisites
 
 - Node.js 20+
 - npm 9+
+- A webcam and microphone
+- API Keys: `GEMINI_API_KEY` (required), `SARVAM_API_KEY` (for voice; text fallback otherwise)
 
 ### 1. Clone & Install
 
 ```bash
-cd ai-gym-trainer
+git clone https://github.com/Akum030/formfit.git
+cd formfit
 
 # Backend
 cd backend
 cp .env.example .env
-# Edit .env with your GEMINI_API_KEY (required) and SARVAM_API_KEY (optional)
+# Add your GEMINI_API_KEY and optionally SARVAM_API_KEY to .env
 npm install
 npx prisma db push
 npx prisma generate
@@ -73,37 +99,87 @@ npm install
 ### 2. Run Development
 
 ```bash
-# Terminal 1 — Backend
+# Terminal 1 — Backend (port 4000)
 cd backend
-npm run dev
+npx tsx src/index.ts
 
-# Terminal 2 — Frontend
+# Terminal 2 — Frontend (port 5174)
 cd frontend
 npm run dev
 ```
 
-- Frontend: http://localhost:3000
-- Backend: http://localhost:4000
-- Health: http://localhost:4000/health
+Open http://localhost:5174 in your browser.
 
-### 3. Use It
+### 3. Run with Docker (Production)
 
-1. **Allow camera & microphone** when prompted
-2. **Wait for MoveNet** to load (status indicator turns green)
-3. **Select an exercise** from the sidebar
-4. **Click "Start Workout"**
-5. **Exercise!** — AI scores your form in real-time
-6. **Voice coaching** happens automatically (needs Sarvam API key)
+```bash
+# Copy and fill in your keys
+cp backend/.env.example backend/.env
+# Edit backend/.env with GEMINI_API_KEY and SARVAM_API_KEY
 
-## Exercises Supported
+docker compose up -d --build
 
-| Exercise | Primary Angles | Reps × Sets |
-|----------|---------------|-------------|
-| Squat | Hip-Knee-Ankle, Torso Lean | 12 × 3 |
-| Push-up | Shoulder-Elbow-Wrist, Body Line | 10 × 3 |
-| Lunge | Front Knee, Torso, Back Knee | 10 × 3 |
-| Bicep Curl | Elbow Angle | 12 × 3 |
-| Shoulder Press | Elbow Extension | 10 × 3 |
+# Verify
+curl http://localhost:4000/health
+# Expected: {"status":"ok","service":"ai-gym-trainer"}
+```
+
+### 4. Run E2E Tests
+
+> Requires both servers running (step 2 or 3 above)
+
+```bash
+# From project root
+npx playwright test
+
+# Run with browser visible
+npx playwright test --headed
+```
+
+12 tests covering: homepage, exercise selection, backend API, session flow, coaching, rep events, history page.
+
+### 5. Test the Voice Agent
+
+1. Open http://localhost:5174
+2. **Allow camera and microphone** access
+3. Select any exercise (e.g., Squat)
+4. Click **Start Workout**
+5. Speak in Hindi: _"bhai meri form kaisi hai?"_ — coach responds in Hindi
+6. Or click the **🇬🇧 English** toggle in the controls panel to switch to English
+7. Do a squat with bad form (knees caving in) — coach **interrupts mid-rep** with a correction
+
+## Exercises Supported (22 Total)
+
+### Bodyweight / Home Workouts
+
+| Exercise | Category | Reps × Sets |
+|----------|----------|-------------|
+| Squat | Legs | 12 × 3 |
+| Push-up | Chest | 10 × 3 |
+| Lunge | Legs | 10 × 3 |
+| Jumping Jacks | Cardio | 20 × 3 |
+| High Knees | Cardio | 20 × 3 |
+| Glute Bridge | Glutes | 15 × 3 |
+| Calf Raise | Legs | 15 × 3 |
+| Tricep Dip | Arms | 10 × 3 |
+| Wall Sit | Legs | hold × 3 |
+| Sumo Squat | Legs | 15 × 3 |
+| Standing Crunch | Core | 15 × 3 |
+| Standing Leg Raise | Core | 12 × 3 |
+
+### Dumbbell / Gym
+
+| Exercise | Category | Reps × Sets |
+|----------|----------|-------------|
+| Bicep Curl | Arms | 12 × 3 |
+| Shoulder Press | Shoulders | 10 × 3 |
+| Lateral Raise | Shoulders | 12 × 3 |
+| Front Raise | Shoulders | 12 × 3 |
+| Dumbbell Row | Back | 12 × 3 |
+| Hammer Curl | Arms | 12 × 3 |
+| Deadlift | Back | 10 × 3 |
+| Goblet Squat | Legs | 12 × 3 |
+| Overhead Tricep Extension | Arms | 12 × 3 |
 
 ## Form Scoring
 

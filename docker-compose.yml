@@ -9,7 +9,7 @@ services:
       - PORT=4000
       - DATABASE_URL=file:./data/dev.db
       - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - GEMINI_MODEL_NAME=${GEMINI_MODEL_NAME:-gemini-2.0-flash}
+      - GEMINI_MODEL_NAME=${GEMINI_MODEL_NAME:-gemini-2.5-flash}
       - SARVAM_API_KEY=${SARVAM_API_KEY}
       - SARVAM_STT_ENDPOINT=${SARVAM_STT_ENDPOINT:-https://api.sarvam.ai/speech-to-text}
       - SARVAM_TTS_ENDPOINT=${SARVAM_TTS_ENDPOINT:-https://api.sarvam.ai/text-to-speech}
@@ -27,6 +27,8 @@ services:
       dockerfile: ../Dockerfile.frontend
     ports:
       - "3000:3000"
+    environment:
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-}
     depends_on:
       backend:
         condition: service_healthy

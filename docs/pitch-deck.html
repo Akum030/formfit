@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RepSensei — Pitch Deck</title>
+<style>
+  :root {
+    --emerald: #10b981; --cyan: #06b6d4; --violet: #8b5cf6;
+    --amber: #f59e0b; --red: #ef4444; --dark: #0a0f1e; --card: #0f172a;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; font-family: 'Inter', system-ui, sans-serif; }
+  body { background: var(--dark); color: white; }
+
+  .slide {
+    min-height: 100vh;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    padding: 60px 40px;
+    position: relative; overflow: hidden;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .slide-inner { max-width: 1000px; width: 100%; }
+
+  /* Orb backgrounds */
+  .orb { position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none; }
+  .orb-1 { width: 500px; height: 500px; background: rgba(16,185,129,0.12); top: -100px; right: -100px; }
+  .orb-2 { width: 400px; height: 400px; background: rgba(139,92,246,0.1); bottom: -100px; left: -100px; }
+  .orb-3 { width: 300px; height: 300px; background: rgba(6,182,212,0.08); top: 50%; left: 50%; transform: translate(-50%,-50%); }
+
+  h1 { font-size: clamp(2.5rem, 6vw, 5rem); font-weight: 900; line-height: 1.05; margin-bottom: 16px; }
+  h2 { font-size: clamp(1.8rem, 4vw, 3rem); font-weight: 800; margin-bottom: 20px; }
+  h3 { font-size: 1.3rem; font-weight: 700; margin-bottom: 10px; color: rgba(255,255,255,0.9); }
+  p  { color: rgba(255,255,255,0.55); font-size: 1.05rem; line-height: 1.7; }
+
+  .gradient-text {
+    background: linear-gradient(135deg, var(--emerald), var(--cyan));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .gradient-text-v { background: linear-gradient(135deg, var(--violet), #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .gradient-text-a { background: linear-gradient(135deg, var(--amber), var(--red)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+  .tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 14px; border-radius: 999px;
+    border: 1px solid rgba(16,185,129,0.3); background: rgba(16,185,129,0.1);
+    color: var(--emerald); font-size: 0.8rem; font-weight: 600; letter-spacing: 0.05em;
+    margin-bottom: 24px;
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--emerald); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  .card {
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px; padding: 28px 32px;
+  }
+  .card:hover { border-color: rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); }
+  .card-icon { font-size: 2.2rem; margin-bottom: 12px; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+  .flow {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    margin: 24px 0;
+  }
+  .flow-step {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px; padding: 14px 20px; text-align: center; flex: 1; min-width: 100px;
+  }
+  .flow-step .icon { font-size: 1.8rem; display: block; margin-bottom: 6px; }
+  .flow-step .label { font-size: 0.75rem; color: rgba(255,255,255,0.5); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+  .flow-arrow { color: rgba(255,255,255,0.2); font-size: 1.5rem; flex-shrink: 0; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 32px; }
+  .stat { text-align: center; }
+  .stat-num { font-size: 2.8rem; font-weight: 900; line-height: 1; }
+  .stat-label { font-size: 0.7rem; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 4px; }
+
+  .judge-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  .judge-card { background: rgba(255,255,255,0.03); border-radius: 18px; padding: 24px; border: 1px solid rgba(255,255,255,0.07); }
+  .judge-pct { font-size: 2.5rem; font-weight: 900; }
+  .judge-title { font-size: 0.9rem; font-weight: 700; margin: 6px 0 4px; color: rgba(255,255,255,0.85); }
+  .judge-desc { font-size: 0.78rem; color: rgba(255,255,255,0.4); line-height: 1.5; }
+
+  .tech-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 14px; border-radius: 10px;
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.09);
+    color: rgba(255,255,255,0.6); font-size: 0.82rem; font-weight: 500;
+    margin: 4px;
+  }
+
+  .nav {
+    position: fixed; right: 20px; top: 50%; transform: translateY(-50%);
+    display: flex; flex-direction: column; gap: 8px; z-index: 100;
+  }
+  .nav-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: rgba(255,255,255,0.2); cursor: pointer; transition: all 0.2s;
+    border: none;
+  }
+  .nav-dot:hover, .nav-dot.active { background: var(--emerald); transform: scale(1.3); }
+
+  .highlight-block {
+    background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(6,182,212,0.05));
+    border: 1px solid rgba(16,185,129,0.2); border-radius: 20px;
+    padding: 28px 32px; margin: 20px 0;
+  }
+  .highlight-block p { color: rgba(255,255,255,0.75); font-size: 1.15rem; }
+
+  .cta-btn {
+    display: inline-block; padding: 16px 40px; border-radius: 16px;
+    background: linear-gradient(135deg, var(--emerald), var(--cyan));
+    color: white; font-weight: 800; font-size: 1.1rem; text-decoration: none;
+    box-shadow: 0 8px 32px rgba(16,185,129,0.3); margin-top: 20px; margin-right: 12px;
+  }
+  .cta-btn-outline {
+    display: inline-block; padding: 16px 40px; border-radius: 16px;
+    border: 2px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.7);
+    font-weight: 700; font-size: 1.1rem; text-decoration: none; margin-top: 20px;
+  }
+
+  @media (max-width: 768px) {
+    .grid-2, .grid-3, .grid-4, .judge-row, .stat-grid { grid-template-columns: 1fr 1fr; }
+    .flow { flex-direction: column; }
+    .flow-arrow { transform: rotate(90deg); }
+    .nav { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Navigation dots -->
+<nav class="nav">
+  <button class="nav-dot active" onclick="scrollToSlide(0)" title="Cover"></button>
+  <button class="nav-dot" onclick="scrollToSlide(1)" title="Problem"></button>
+  <button class="nav-dot" onclick="scrollToSlide(2)" title="Solution"></button>
+  <button class="nav-dot" onclick="scrollToSlide(3)" title="How it works"></button>
+  <button class="nav-dot" onclick="scrollToSlide(4)" title="Voice Agent"></button>
+  <button class="nav-dot" onclick="scrollToSlide(5)" title="Judging"></button>
+  <button class="nav-dot" onclick="scrollToSlide(6)" title="Tech"></button>
+  <button class="nav-dot" onclick="scrollToSlide(7)" title="CTA"></button>
+</nav>
+
+<!-- ═══════ SLIDE 1 — Cover ═══════ -->
+<section class="slide" id="slide-0">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="slide-inner" style="text-align:center">
+    <div style="font-size:5rem;margin-bottom:20px">🥋</div>
+    <div class="tag"><span class="dot"></span>Gemini Live Agent Challenge 2026</div>
+    <h1>Rep<span class="gradient-text">Sensei</span></h1>
+    <p style="font-size:1.4rem;color:rgba(255,255,255,0.7);max-width:600px;margin:0 auto 32px;font-weight:500;">
+      The AI gym trainer that <strong style="color:white">sees</strong> your form,
+      <strong style="color:white">hears</strong> your Hindi,
+      and <strong style="color:white">yells</strong> at you mid-rep when you're doing it wrong.
+    </p>
+    <div class="stat-grid" style="max-width:700px;margin:0 auto">
+      <div class="stat"><div class="stat-num gradient-text">22</div><div class="stat-label">Exercises</div></div>
+      <div class="stat"><div class="stat-num" style="color:var(--violet)">15+</div><div class="stat-label">FPS Pose AI</div></div>
+      <div class="stat"><div class="stat-num" style="color:var(--amber)">2</div><div class="stat-label">Languages</div></div>
+      <div class="stat"><div class="stat-num" style="color:var(--red)">&lt;2s</div><div class="stat-label">Voice Latency</div></div>
+    </div>
+    <p style="margin-top:32px;font-size:0.9rem;color:rgba(255,255,255,0.2);">🌐 fitsenseai.aidhunik.com &nbsp;·&nbsp; github.com/Akum030/formfit</p>
+  </div>
+</section>
+
+<!-- ═══════ SLIDE 2 — Problem ═══════ -->
+<section class="slide" id="slide-1">
+  <div class="orb orb-2" style="background:rgba(239,68,68,0.1)"></div>
+  <div class="slide-inner">
+    <h2>The Problem</h2>
+    <div class="highlight-block" style="border-color:rgba(239,68,68,0.3);background:linear-gradient(135deg,rgba(239,68,68,0.08),rgba(239,68,68,0.03))">
+      <p>Gym injuries from bad form cost millions every year. Yet a personal trainer costs ₹2,000–5,000/hour.
+      Most people work out alone, following YouTube videos that <strong style="color:white">cannot see them</strong>.</p>
+    </div>
+    <div class="grid-3" style="margin-top:28px">
+      <div class="card">
+        <div class="card-icon">💸</div>
+        <h3>Trainers are Expensive</h3>
+        <p>₹2,000–₹5,000/hr. Unaffordable for most Indian home gym users.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📺</div>
+        <h3>Videos are Blind</h3>
+        <p>YouTube workouts can't see your posture or tell you your knee is caving in.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🤕</div>
+        <h3>Injuries from Bad Form</h3>
+        <p>Lower back injuries, knee pain — most preventable with proper technique correction.</p>
+      </div>
+    </div>
+    <div class="highlight-block" style="margin-top:28px">
+      <p style="font-size:1.2rem;font-weight:700;color:var(--emerald)">
+        "There are 200M+ gym-goers in India. None of them have AI watching their squat form."
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ SLIDE 3 — Solution ═══════ -->
+<section class="slide" id="slide-2">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-3"></div>
+  <div class="slide-inner">
+    <h2>Meet <span class="gradient-text">RepSensei</span></h2>
+    <p style="margin-bottom:32px;font-size:1.1rem">A Live Agent that acts as your personal trainer — watching, listening, and speaking corrections using Gemini 2.5 Flash + Sarvam AI voice.</p>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-icon">📷</div>
+        <h3>Sees Your Form</h3>
+        <p>MoveNet Thunder detects 17 body keypoints at 15+ FPS, entirely in-browser with TensorFlow.js. No data leaves your device for pose inference.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📐</div>
+        <h3>Scores Every Rep</h3>
+        <p>Custom angle-constraint engine computes joint angles in real time, scores 0–100% per rep phase, and shows live skeleton overlay with color-coded feedback.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🎙️</div>
+        <h3>Speaks Hindi</h3>
+        <p>Sarvam AI STT (hi-IN) understands your questions. Gemini generates coaching. Sarvam TTS (bulbul:v2) speaks it back — all in Hindi by default.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🚨</div>
+        <h3>Interrupts Mid-Rep</h3>
+        <p>When form score drops below 40%, the coach immediately interrupts with a correction — <em>"Arre bhai! Ghutne bahar rakho!"</em> — just like a real trainer.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ SLIDE 4 — How it works ═══════ -->
+<section class="slide" id="slide-3">
+  <div class="orb orb-2" style="background:rgba(6,182,212,0.1)"></div>
+  <div class="slide-inner">
+    <h2>How It <span class="gradient-text">Works</span></h2>
+    <div class="flow">
+      <div class="flow-step"><span class="icon">📷</span><span class="label">Webcam</span></div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step"><span class="icon">🦴</span><span class="label">MoveNet<br>17 keypoints</span></div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step"><span class="icon">📐</span><span class="label">Angle<br>Scoring</span></div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step"><span class="icon">🚨</span><span class="label">Urgent<br>Trigger</span></div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step"><span class="icon">🧠</span><span class="label">Gemini<br>2.5 Flash</span></div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step"><span class="icon">🔊</span><span class="label">Sarvam<br>TTS Hindi</span></div>
+    </div>
+    <div class="flow" style="margin-top:0">
+      <div class="flow-step"><span class="icon">🎤</span><span class="label">Mic Input</span></div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step"><span class="icon">📡</span><span class="label">WebSocket<br>Audio</span></div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step"><span class="icon">🗣️</span><span class="label">Sarvam<br>STT hi-IN</span></div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step"><span class="icon">🧠</span><span class="label">Gemini<br>Context</span></div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step"><span class="icon">🔊</span><span class="label">Spoken<br>Response</span></div>
+    </div>
+    <div class="grid-3" style="margin-top:24px">
+      <div class="card" style="border-color:rgba(16,185,129,0.2)">
+        <h3 style="color:var(--emerald)">Form Scoring</h3>
+        <p>Joint angles compared against per-exercise, per-phase biomechanical constraints. Blended score 0–100%.</p>
+      </div>
+      <div class="card" style="border-color:rgba(139,92,246,0.2)">
+        <h3 style="color:var(--violet)">Coaching Engine</h3>
+        <p>Rate-limited proactive triggers: rep feedback (every rep), low form (score &lt; 60), urgent interruption (score &lt; 40).</p>
+      </div>
+      <div class="card" style="border-color:rgba(6,182,212,0.2)">
+        <h3 style="color:var(--cyan)">Language Switch</h3>
+        <p>Toggle between 🇮🇳 Hindi and 🇬🇧 English at any time. Language flows through WebSocket URL param to all services.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ SLIDE 5 — Voice Agent Deep Dive ═══════ -->
+<section class="slide" id="slide-4">
+  <div class="orb orb-1" style="background:rgba(139,92,246,0.12)"></div>
+  <div class="slide-inner">
+    <div class="tag" style="border-color:rgba(139,92,246,0.3);background:rgba(139,92,246,0.1);color:var(--violet)">
+      <span style="width:7px;height:7px;border-radius:50%;background:var(--violet);display:inline-block;animation:pulse 2s infinite"></span>
+      Live Agent Voice Pipeline
+    </div>
+    <h2>The Voice <span class="gradient-text-v">Agent</span></h2>
+    <div class="highlight-block" style="border-color:rgba(139,92,246,0.25);background:linear-gradient(135deg,rgba(139,92,246,0.08),rgba(139,92,246,0.03))">
+      <p>Always-listening duplex voice agent. <strong style="color:white">No push-to-talk.</strong>
+      Speak naturally mid-exercise. The agent also speaks to you — and <strong style="color:white">interrupts itself</strong> if you start talking.</p>
+    </div>
+    <div class="grid-2" style="margin-top:24px">
+      <div>
+        <h3 style="margin-bottom:16px;color:rgba(255,255,255,0.6);font-size:0.8rem;text-transform:uppercase;letter-spacing:0.08em">What you can say</h3>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div class="card" style="padding:14px 20px">
+            <span style="font-size:1.3rem">🇮🇳</span> <em style="color:rgba(255,255,255,0.8)">"Bhai meri form kaisi hai?"</em>
+          </div>
+          <div class="card" style="padding:14px 20px">
+            <span style="font-size:1.3rem">🇮🇳</span> <em style="color:rgba(255,255,255,0.8)">"Kitne rep bacha hai?"</em>
+          </div>
+          <div class="card" style="padding:14px 20px">
+            <span style="font-size:1.3rem">🇬🇧</span> <em style="color:rgba(255,255,255,0.8)">"Is my squat deep enough?"</em>
+          </div>
+          <div class="card" style="padding:14px 20px">
+            <span style="font-size:1.3rem">🇬🇧</span> <em style="color:rgba(255,255,255,0.8)">"Start the next set"</em>
+          </div>
+        </div>
+      </div>
+      <div>
+        <h3 style="margin-bottom:16px;color:rgba(255,255,255,0.6);font-size:0.8rem;text-transform:uppercase;letter-spacing:0.08em">What the coach says</h3>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div class="card" style="padding:14px 20px;border-color:rgba(16,185,129,0.2)">
+            <span style="font-size:0.8rem;color:var(--emerald)">✅ Good form</span><br>
+            <em style="color:rgba(255,255,255,0.8)">"Wah bhai! Perfect squat — aur ek!"</em>
+          </div>
+          <div class="card" style="padding:14px 20px;border-color:rgba(245,158,11,0.2)">
+            <span style="font-size:0.8rem;color:var(--amber)">⚠️ Form warning</span><br>
+            <em style="color:rgba(255,255,255,0.8)">"Ghutna thoda aur bahar rakho"</em>
+          </div>
+          <div class="card" style="padding:14px 20px;border-color:rgba(239,68,68,0.3)">
+            <span style="font-size:0.8rem;color:var(--red)">🚨 Urgent interrupt</span><br>
+            <em style="color:rgba(255,255,255,0.8)">"Arre bhai! Ruk! Peet seedhi rakh!"</em>
+          </div>
+          <div class="card" style="padding:14px 20px;border-color:rgba(16,185,129,0.2)">
+            <span style="font-size:0.8rem;color:var(--cyan)">📊 Rep count</span><br>
+            <em style="color:rgba(255,255,255,0.8)">"Rep 8 complete! Score 87 percent"</em>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ SLIDE 6 — Judging Criteria Fit ═══════ -->
+<section class="slide" id="slide-5">
+  <div class="orb orb-3" style="background:rgba(245,158,11,0.08)"></div>
+  <div class="slide-inner">
+    <h2>Why RepSensei <span class="gradient-text-a">Wins</span></h2>
+    <div class="judge-row">
+      <div class="judge-card" style="border-color:rgba(16,185,129,0.2)">
+        <div class="judge-pct gradient-text">40%</div>
+        <div class="judge-title">Innovation & Multimodal UX</div>
+        <div class="judge-desc">
+          ✅ Breaks the text-box paradigm completely<br>
+          ✅ See (MoveNet) + Hear (Sarvam STT) + Speak (TTS)<br>
+          ✅ Live, context-aware — knows your current rep, score, exercise<br>
+          ✅ Distinct persona: "desi gym trainer who doesn't take nonsense"<br>
+          ✅ Interruptible — both ways
+        </div>
+      </div>
+      <div class="judge-card" style="border-color:rgba(139,92,246,0.2)">
+        <div class="judge-pct gradient-text-v">30%</div>
+        <div class="judge-title">Technical Implementation</div>
+        <div class="judge-desc">
+          ✅ Google GenAI SDK (Gemini 2.5 Flash)<br>
+          ✅ Multi-model fallback chain<br>
+          ✅ Hosted on server with Nginx + Docker<br>
+          ✅ Agent logic: CoachEngine with rate limiting, urgency triggers<br>
+          ✅ Sarvam AI for genuine Hindi voice (not Google Translate TTS)
+        </div>
+      </div>
+      <div class="judge-card" style="border-color:rgba(245,158,11,0.2)">
+        <div class="judge-pct gradient-text-a">30%</div>
+        <div class="judge-title">Demo & Presentation</div>
+        <div class="judge-desc">
+          ✅ Video demos form scoring live<br>
+          ✅ Voice interruption shown mid-rep<br>
+          ✅ Architecture diagram in repo<br>
+          ✅ Reproducible README (12 Playwright tests)<br>
+          ✅ Live URL: fitsenseai.aidhunik.com
+        </div>
+      </div>
+    </div>
+    <div class="highlight-block" style="margin-top:28px">
+      <p style="font-size:1.1rem;font-weight:700;color:white">
+        Category: <span class="gradient-text">Live Agents 🗣️</span> —
+        "Build an agent that users can talk to naturally, can be interrupted"
+        <span style="color:rgba(255,255,255,0.5);font-weight:400"> — that's exactly RepSensei.</span>
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ SLIDE 7 — Tech Stack ═══════ -->
+<section class="slide" id="slide-6">
+  <div class="orb orb-1" style="background:rgba(6,182,212,0.1)"></div>
+  <div class="slide-inner">
+    <h2>Tech <span class="gradient-text">Stack</span></h2>
+    <div class="grid-4" style="margin-bottom:28px">
+      <div class="card" style="text-align:center;border-color:rgba(16,185,129,0.2)">
+        <div style="font-size:2rem;margin-bottom:8px">🧠</div>
+        <h3 style="font-size:0.95rem;color:var(--emerald)">Gemini 2.5 Flash</h3>
+        <p style="font-size:0.8rem">Google GenAI SDK. Multi-model fallback. 150-token coaching responses.</p>
+      </div>
+      <div class="card" style="text-align:center;border-color:rgba(139,92,246,0.2)">
+        <div style="font-size:2rem;margin-bottom:8px">🦴</div>
+        <h3 style="font-size:0.95rem;color:var(--violet)">MoveNet Thunder</h3>
+        <p style="font-size:0.8rem">TensorFlow.js. 17 keypoints. 15+ FPS in-browser. No server round-trip.</p>
+      </div>
+      <div class="card" style="text-align:center;border-color:rgba(245,158,11,0.2)">
+        <div style="font-size:2rem;margin-bottom:8px">🗣️</div>
+        <h3 style="font-size:0.95rem;color:var(--amber)">Sarvam AI</h3>
+        <p style="font-size:0.8rem">saarika:v2.5 STT + bulbul:v2 TTS. Hindi-first. Natural desi voice.</p>
+      </div>
+      <div class="card" style="text-align:center;border-color:rgba(239,68,68,0.2)">
+        <div style="font-size:2rem;margin-bottom:8px">📡</div>
+        <h3 style="font-size:0.95rem;color:var(--red)">WebSocket Duplex</h3>
+        <p style="font-size:0.8rem">Full-duplex audio stream. Language via ?lang= param. Interruptible.</p>
+      </div>
+    </div>
+    <div style="text-align:center">
+      <span class="tech-pill">React 18</span>
+      <span class="tech-pill">TypeScript</span>
+      <span class="tech-pill">Vite</span>
+      <span class="tech-pill">TailwindCSS</span>
+      <span class="tech-pill">Node.js</span>
+      <span class="tech-pill">Express</span>
+      <span class="tech-pill">Prisma</span>
+      <span class="tech-pill">SQLite</span>
+      <span class="tech-pill">Docker</span>
+      <span class="tech-pill">Nginx</span>
+      <span class="tech-pill">Playwright</span>
+    </div>
+    <div class="stat-grid" style="margin-top:32px;max-width:800px;margin-left:auto;margin-right:auto">
+      <div class="stat"><div class="stat-num gradient-text">22</div><div class="stat-label">Exercises</div></div>
+      <div class="stat"><div class="stat-num" style="color:var(--violet)">17</div><div class="stat-label">Keypoints</div></div>
+      <div class="stat"><div class="stat-num" style="color:var(--amber)">12</div><div class="stat-label">E2E tests</div></div>
+      <div class="stat"><div class="stat-num" style="color:var(--red)">4s</div><div class="stat-label">Interrupt threshold</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ SLIDE 8 — CTA ═══════ -->
+<section class="slide" id="slide-7">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+  <div class="slide-inner" style="text-align:center">
+    <div style="font-size:4rem;margin-bottom:20px">🥋</div>
+    <h2>Ready to train with your <span class="gradient-text">AI Sensei</span>?</h2>
+    <p style="max-width:600px;margin:16px auto 0;font-size:1.1rem">
+      Open in your browser. Allow camera + mic. Select an exercise.<br>
+      <strong style="color:white">It's free. It's real-time. It speaks Hindi.</strong>
+    </p>
+    <div style="margin-top:32px">
+      <a href="https://fitsenseai.aidhunik.com" class="cta-btn">🚀 Try Live Demo</a>
+      <a href="https://github.com/Akum030/formfit" class="cta-btn-outline">📦 GitHub Repo</a>
+    </div>
+    <div style="margin-top:48px;padding-top:32px;border-top:1px solid rgba(255,255,255,0.06)">
+      <p style="font-size:0.85rem;color:rgba(255,255,255,0.2)">
+        Built for the Gemini Live Agent Challenge 2026 · #GeminiLiveAgentChallenge<br>
+        MoveNet + Gemini 2.5 Flash + Sarvam AI · RepSensei
+      </p>
+    </div>
+  </div>
+</section>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const dots = document.querySelectorAll('.nav-dot');
+
+  function scrollToSlide(i) {
+    slides[i].scrollIntoView({ behavior: 'smooth' });
+  }
+
+  // Update active dot on scroll
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const idx = Array.from(slides).indexOf(entry.target);
+        dots.forEach(d => d.classList.remove('active'));
+        if (dots[idx]) dots[idx].classList.add('active');
+      }
+    });
+  }, { threshold: 0.5 });
+
+  slides.forEach(slide => observer.observe(slide));
+</script>
+</body>
+</html>
