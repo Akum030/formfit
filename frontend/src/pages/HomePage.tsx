@@ -66,11 +66,29 @@ const FEATURES = [
 ];
 
 const EXERCISE_CARDS = [
+  // Bodyweight / Home
   { id: 'squat', name: 'Squat', icon: '🦵', gradient: 'from-blue-500 to-cyan-500', shadow: 'shadow-blue-500/20' },
   { id: 'pushup', name: 'Push-up', icon: '💪', gradient: 'from-red-500 to-orange-500', shadow: 'shadow-red-500/20' },
   { id: 'lunge', name: 'Lunge', icon: '🏃', gradient: 'from-green-500 to-emerald-500', shadow: 'shadow-green-500/20' },
+  { id: 'jumping_jacks', name: 'Jumping Jacks', icon: '⭐', gradient: 'from-yellow-500 to-amber-500', shadow: 'shadow-yellow-500/20' },
+  { id: 'high_knees', name: 'High Knees', icon: '🔥', gradient: 'from-orange-500 to-red-500', shadow: 'shadow-orange-500/20' },
+  { id: 'glute_bridge', name: 'Glute Bridge', icon: '🍑', gradient: 'from-pink-500 to-rose-500', shadow: 'shadow-pink-500/20' },
+  { id: 'calf_raise', name: 'Calf Raise', icon: '🦶', gradient: 'from-teal-500 to-cyan-500', shadow: 'shadow-teal-500/20' },
+  { id: 'tricep_dip', name: 'Tricep Dip', icon: '🪑', gradient: 'from-indigo-500 to-blue-500', shadow: 'shadow-indigo-500/20' },
+  { id: 'wall_sit', name: 'Wall Sit', icon: '🧱', gradient: 'from-stone-500 to-gray-500', shadow: 'shadow-stone-500/20' },
+  { id: 'sumo_squat', name: 'Sumo Squat', icon: '🏯', gradient: 'from-purple-500 to-violet-500', shadow: 'shadow-purple-500/20' },
+  { id: 'standing_crunch', name: 'Standing Crunch', icon: '🎯', gradient: 'from-lime-500 to-green-500', shadow: 'shadow-lime-500/20' },
+  { id: 'leg_raise', name: 'Leg Raise', icon: '🦿', gradient: 'from-sky-500 to-blue-500', shadow: 'shadow-sky-500/20' },
+  // Dumbbell / Gym
   { id: 'bicep_curl', name: 'Bicep Curl', icon: '🦾', gradient: 'from-violet-500 to-purple-500', shadow: 'shadow-violet-500/20' },
-  { id: 'shoulder_press', name: 'Press', icon: '🏋️', gradient: 'from-amber-500 to-yellow-500', shadow: 'shadow-amber-500/20' },
+  { id: 'shoulder_press', name: 'Shoulder Press', icon: '🏋️', gradient: 'from-amber-500 to-yellow-500', shadow: 'shadow-amber-500/20' },
+  { id: 'lateral_raise', name: 'Lateral Raise', icon: '🪽', gradient: 'from-fuchsia-500 to-pink-500', shadow: 'shadow-fuchsia-500/20' },
+  { id: 'front_raise', name: 'Front Raise', icon: '🫴', gradient: 'from-rose-500 to-red-500', shadow: 'shadow-rose-500/20' },
+  { id: 'dumbbell_row', name: 'Dumbbell Row', icon: '🚣', gradient: 'from-emerald-500 to-teal-500', shadow: 'shadow-emerald-500/20' },
+  { id: 'hammer_curl', name: 'Hammer Curl', icon: '🔨', gradient: 'from-slate-500 to-zinc-500', shadow: 'shadow-slate-500/20' },
+  { id: 'deadlift', name: 'Deadlift', icon: '🏗️', gradient: 'from-red-600 to-orange-500', shadow: 'shadow-red-600/20' },
+  { id: 'goblet_squat', name: 'Goblet Squat', icon: '🏆', gradient: 'from-cyan-500 to-blue-500', shadow: 'shadow-cyan-500/20' },
+  { id: 'overhead_tricep', name: 'Overhead Tricep', icon: '🙆', gradient: 'from-violet-600 to-indigo-500', shadow: 'shadow-violet-600/20' },
 ];
 
 export function HomePage() {
@@ -163,7 +181,7 @@ export function HomePage() {
           <h1 className="text-5xl sm:text-6xl md:text-7xl font-black text-white mb-6 leading-[1.08] animate-fade-in-up anim-delay-100">
             Your Personal
             <br />
-            <span className="hero-gradient-text">AI Form Coach</span>
+            <span className="hero-gradient-text">AI Gym Sensei</span>
           </h1>
 
           {/* Subtitle */}
@@ -250,7 +268,7 @@ export function HomePage() {
           <h2 className="text-3xl md:text-4xl font-black text-white mb-3">Quick Start</h2>
           <p className="text-white/35">Choose an exercise and jump into AI-powered coaching</p>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-4">
           {EXERCISE_CARDS.map((ex) => (
             <Link
               key={ex.id}
@@ -295,7 +313,7 @@ export function HomePage() {
       {/* ═══════ FOOTER ═══════ */}
       <footer className="border-t border-white/[0.04] py-8">
         <div className="max-w-6xl mx-auto px-6 text-center">
-          <p className="text-white/15 text-sm">FormFit · Hackathon 2026 · Built with ❤️ and AI</p>
+          <p className="text-white/15 text-sm">RepSensei · Hackathon 2026 · Built with ❤️ and AI</p>
         </div>
       </footer>
     </div>
@@ -348,7 +366,7 @@ function OnboardingModal({ onComplete }: { onComplete: (name: string) => void })
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center text-3xl mx-auto mb-4 shadow-xl shadow-emerald-500/30">
             🏋️
           </div>
-          <h2 className="text-2xl font-black text-white mb-2">Welcome to FormFit</h2>
+          <h2 className="text-2xl font-black text-white mb-2">Welcome to RepSensei</h2>
           <p className="text-white/35 text-sm">Set up your profile to track progress and personalize coaching</p>
         </div>
 

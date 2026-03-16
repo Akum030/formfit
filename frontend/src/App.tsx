@@ -44,6 +44,7 @@ function WorkoutPage() {
   const [isPaused, setIsPaused] = useState(false);
   const [lastCoaching, setLastCoaching] = useState<CoachingMessage | null>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [language, setLanguage] = useState<string>(() => localStorage.getItem('gym-language') || 'hi-IN');
 
   // Auto-select exercise from URL query param (e.g. /workout?exercise=squat)
   useEffect(() => {
@@ -75,6 +76,7 @@ function WorkoutPage() {
   const { voiceState, lastTranscript, isMuted, toggleMute, playCoachingAudio } = useVoiceAgent({
     sessionId,
     isActive: isSessionActive,
+    language,
     onCoaching: handleCoaching,
   });
 
@@ -126,6 +128,7 @@ function WorkoutPage() {
           body: JSON.stringify({
             sessionId: data.sessionId,
             exerciseId: selectedExerciseId,
+            language,
           }),
         });
 
@@ -200,6 +203,14 @@ function WorkoutPage() {
   // Pause/resume
   const handlePause = useCallback(() => {
     setIsPaused((p) => !p);
+  }, []);
+
+  const handleLanguageToggle = useCallback(() => {
+    setLanguage((prev) => {
+      const next = prev === 'hi-IN' ? 'en-IN' : 'hi-IN';
+      localStorage.setItem('gym-language', next);
+      return next;
+    });
   }, []);
 
   const CAMERA_WIDTH = 640;
@@ -283,6 +294,8 @@ function WorkoutPage() {
               aiAnalysis={aiAnalysis}
               aiTip={aiTip}
               isAnalyzing={isAnalyzing}
+              language={language}
+              onLanguageToggle={handleLanguageToggle}
             />
           </div>
         </div>

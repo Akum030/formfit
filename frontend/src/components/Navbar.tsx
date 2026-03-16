@@ -22,8 +22,8 @@ export function Navbar() {
             <span className="text-xl">🏋️</span>
           </div>
           <div className="hidden sm:block">
-            <span className="text-lg font-extrabold text-white">Form</span>
-            <span className="text-lg font-extrabold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">Fit</span>
+            <span className="text-lg font-extrabold text-white">Rep</span>
+            <span className="text-lg font-extrabold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">Sensei</span>
           </div>
         </Link>
 
@@ -55,7 +55,7 @@ export function Navbar() {
         <div className="flex items-center gap-2">
           <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-500/10 border border-violet-500/20">
             <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
-            <span className="text-violet-400 text-xs font-medium">Gemini AI</span>
+            <span className="text-violet-400 text-xs font-medium">Gemini + Sarvam AI</span>
           </div>
         </div>
       </div>

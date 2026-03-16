@@ -62,7 +62,7 @@ function buildWavBuffer(pcmData: Buffer, sampleRate = 16000, numChannels = 1, bi
  */
 export async function speechToText(
   audioBuffer: Buffer,
-  language: string = 'en-IN'
+  language: string = 'hi-IN'
 ): Promise<STTResult> {
   if (!SARVAM_API_KEY) {
     console.warn('[SarvamClient] No API key — using fallback STT');
@@ -113,7 +113,7 @@ export async function speechToText(
  */
 export async function textToSpeech(
   text: string,
-  language: string = 'en-IN',
+  language: string = 'hi-IN',
   speaker: string = 'anushka'
 ): Promise<TTSResult> {
   if (!SARVAM_API_KEY) {

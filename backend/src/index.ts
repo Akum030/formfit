@@ -37,7 +37,7 @@ app.use('/api', eventsRouter);
 // ── Start coaching for a session ──────────────────────────
 app.post('/api/coaching/start', async (req, res) => {
   try {
-    const { sessionId, exerciseId, userId } = req.body;
+    const { sessionId, exerciseId, userId, language } = req.body;
 
     const exercise = getExerciseById(exerciseId);
     if (!exercise) {
@@ -65,6 +65,7 @@ app.post('/api/coaching/start', async (req, res) => {
       exercise.defaultSets,
       userGoals,
       userExperience,
+      language || 'hi-IN',
     );
 
     registerCoachEngine(sessionId, engine);

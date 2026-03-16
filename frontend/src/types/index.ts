@@ -45,7 +45,9 @@ export interface PhaseDetection {
 
 export type MovementPattern =
   | 'squat' | 'hip_hinge' | 'vertical_push'
-  | 'horizontal_push' | 'lunge' | 'curl' | 'plank_hold';
+  | 'horizontal_push' | 'lunge' | 'curl' | 'plank_hold'
+  | 'lateral_raise' | 'row' | 'crunch' | 'leg_raise'
+  | 'calf_raise' | 'glute_bridge' | 'jumping' | 'tricep_extension';
 
 export interface ExerciseDefinition {
   id: string;

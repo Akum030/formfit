@@ -10,6 +10,7 @@
 import { Router, type Request, type Response } from 'express';
 import { type CoachEngine } from '../services/coachEngine';
 import { analyzePoseWithGemini, type PoseAnalysisInput } from '../services/geminiClient';
+import { sendCoachingToVoice } from './voice';
 
 // Rate limit Gemini pose analysis (expensive — max every 3 seconds)
 const lastAnalysisTime = new Map<string, number>();
@@ -49,10 +50,23 @@ eventsRouter.post('/events/pose', async (req: Request, res: Response) => {
 
     engine.updateFormScore(score, issues || []);
 
+    // Check for urgent form interruption first — push directly via WebSocket
+    const urgent = await engine.checkUrgentFormInterruption();
+    if (urgent && urgent.audioBase64) {
+      sendCoachingToVoice(sessionId, urgent.text, urgent.audioBase64, urgent.trigger);
+      res.json({ coaching: { text: urgent.text, audioBase64: urgent.audioBase64, trigger: urgent.trigger } });
+      return;
+    }
+
     // Check if coaching should trigger (form issues first, then periodic motivation)
     let coaching = await engine.checkFormCoaching();
     if (!coaching) {
       coaching = await engine.checkMotivationCoaching();
+    }
+
+    // Also push coaching through WebSocket for voice playback
+    if (coaching && coaching.audioBase64) {
+      sendCoachingToVoice(sessionId, coaching.text, coaching.audioBase64, coaching.trigger);
     }
 
     res.json({

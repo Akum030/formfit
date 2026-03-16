@@ -16,6 +16,7 @@ import type { VoiceState, VoiceMessage, CoachingMessage } from '../types';
 interface UseVoiceAgentOptions {
   sessionId: string | null;
   isActive: boolean;
+  language?: string;
   onCoaching?: (msg: CoachingMessage) => void;
   onTranscript?: (text: string) => void;
 }
@@ -40,6 +41,7 @@ const POST_SPEAK_COOLDOWN_MS = 600;      // Don't listen for 600ms after coach f
 export function useVoiceAgent({
   sessionId,
   isActive,
+  language = 'hi-IN',
   onCoaching,
   onTranscript,
 }: UseVoiceAgentOptions): UseVoiceAgentResult {
@@ -113,7 +115,7 @@ export function useVoiceAgent({
 
     async function connect() {
       try {
-        ws = new WebSocket(`${WS_BASE}/ws/voice?sessionId=${sessionId}`);
+        ws = new WebSocket(`${WS_BASE}/ws/voice?sessionId=${sessionId}&lang=${language}`);
         wsRef.current = ws;
 
         ws.onopen = () => {

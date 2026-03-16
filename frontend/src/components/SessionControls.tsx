@@ -40,6 +40,8 @@ interface SessionControlsProps {
   aiAnalysis: GeminiAnalysis | null;
   aiTip: string;
   isAnalyzing: boolean;
+  language: string;
+  onLanguageToggle: () => void;
 }
 
 const EXERCISE_ICONS: Record<string, string> = {
@@ -86,11 +88,23 @@ export function SessionControls({
   aiAnalysis,
   aiTip,
   isAnalyzing,
+  language,
+  onLanguageToggle,
 }: SessionControlsProps) {
   return (
     <div className="flex flex-col h-full gap-3 p-3 overflow-y-auto">
       {/* Top Status Bar */}
       <StatusBar isModelLoading={isModelLoading} isModelReady={isModelReady} fps={fps} isAnalyzing={isAnalyzing} />
+
+      {/* Language Toggle */}
+      <button
+        onClick={onLanguageToggle}
+        className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] transition-all text-sm"
+      >
+        <span>{language === 'hi-IN' ? '🇮🇳' : '🇬🇧'}</span>
+        <span className="text-white/60 font-medium">{language === 'hi-IN' ? 'हिंदी' : 'English'}</span>
+        <span className="text-white/30 text-xs ml-1">tap to switch</span>
+      </button>
 
       {/* Pre-session: Exercise Selection */}
       {!isSessionActive && (

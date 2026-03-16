@@ -23,6 +23,7 @@ interface VoiceConnection {
   silenceTimer: ReturnType<typeof setTimeout> | null;
   maxTimer: ReturnType<typeof setTimeout> | null;
   isProcessing: boolean;
+  language: string;
 }
 
 const connections = new Map<string, VoiceConnection>();
@@ -39,6 +40,8 @@ export function handleVoiceConnection(ws: WebSocket, request: IncomingMessage) {
     return;
   }
 
+  const language = url.searchParams.get('lang') || 'hi-IN';
+
   const conn: VoiceConnection = {
     ws,
     sessionId,
@@ -46,6 +49,7 @@ export function handleVoiceConnection(ws: WebSocket, request: IncomingMessage) {
     silenceTimer: null,
     maxTimer: null,
     isProcessing: false,
+    language,
   };
 
   connections.set(sessionId, conn);
@@ -131,8 +135,8 @@ async function processAudioBuffer(conn: VoiceConnection) {
     console.log(`[Voice] Processing audio buffer: ${fullAudio.length} bytes (~${(fullAudio.length / 32000).toFixed(1)}s)`);
 
     // STT
-    const sttResult = await speechToText(fullAudio);
-    console.log(`[Voice] STT result: "${sttResult.transcript}" (confidence: ${sttResult.confidence})`);
+    const sttResult = await speechToText(fullAudio, conn.language);
+    console.log(`[Voice] STT result (${conn.language}): "${sttResult.transcript}" (confidence: ${sttResult.confidence})`);
 
     if (sttResult.transcript && sttResult.transcript.trim()) {
       // Send transcript to frontend
@@ -188,6 +192,16 @@ function handleControlMessage(conn: VoiceConnection, msg: { type: string; [key: 
     case 'ping':
       sendJSON(conn.ws, { type: 'pong' });
       break;
+
+    case 'set_language': {
+      const lang = typeof msg.language === 'string' ? msg.language : 'hi-IN';
+      conn.language = lang;
+      // Also update coach engine language
+      const langEngine = getCoachEngine(conn.sessionId);
+      if (langEngine) langEngine.setLanguage(lang);
+      sendJSON(conn.ws, { type: 'language_set', language: lang });
+      break;
+    }
   }
 }
 
