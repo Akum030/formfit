@@ -131,7 +131,7 @@ export const CameraView = forwardRef<CameraViewRef, CameraViewProps>(
         {cameraError && (
           <div className="absolute inset-0 flex items-center justify-center bg-gym-900/90 p-6">
             <div className="text-center max-w-sm">
-              <div className="text-4xl mb-3">📷</div>
+              <div className="text-2xl font-black text-white/30 mb-3">CAM</div>
               <p className="text-gym-red font-medium mb-2">Camera Error</p>
               <p className="text-white/60 text-sm">{cameraError}</p>
             </div>

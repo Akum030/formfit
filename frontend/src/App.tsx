@@ -277,11 +277,11 @@ function WorkoutPage() {
   const CAMERA_HEIGHT = 480;
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col relative z-[1]">
       {/* Main content */}
-      <div className="flex-1 flex flex-col lg:flex-row p-4 gap-4 overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row p-2 gap-2 overflow-hidden" style={{ height: 'calc(100vh - 4rem)' }}>
         {/* Camera + Overlay */}
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 flex items-center justify-center min-h-0">
           <CameraView
             ref={cameraRef}
             onVideoReady={handleVideoReady}
@@ -302,7 +302,7 @@ function WorkoutPage() {
             {/* Paused overlay */}
             {isPaused && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-10">
-                <div className="text-white text-3xl font-bold">⏸ PAUSED</div>
+                <div className="text-white text-3xl font-bold">PAUSED</div>
               </div>
             )}
 
@@ -338,8 +338,8 @@ function WorkoutPage() {
         </div>
 
         {/* Controls sidebar */}
-        <div className="w-full lg:w-80 xl:w-96 flex-shrink-0">
-          <div className="glass-card h-full">
+        <div className="w-full lg:w-[420px] xl:w-[460px] flex-shrink-0 min-h-0">
+          <div className="glass-card h-full overflow-hidden">
             <SessionControls
               exercises={exerciseSummaries}
               selectedExerciseId={selectedExerciseId}
@@ -390,7 +390,7 @@ function HistoryRoute() {
 export default function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-gym-900 flex flex-col">
+        <div className="min-h-screen bg-gym-900 flex flex-col dynamic-bg">
         <Navbar />
         <Routes>
           <Route path="/" element={<HomePage />} />

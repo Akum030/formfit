@@ -72,7 +72,7 @@ export function HistoryView({ onBack }: HistoryViewProps) {
       {/* Empty state */}
       {!loading && sessions.length === 0 && !selectedSession && (
         <div className="text-center py-12">
-          <div className="text-5xl mb-4">🏋️</div>
+          <div className="text-3xl font-black text-white/20 mb-4">FIT</div>
           <p className="text-white/50 text-lg">No workouts yet</p>
           <p className="text-white/30 text-sm mt-1">Complete a workout to see it here</p>
         </div>

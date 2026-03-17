@@ -32,63 +32,75 @@ interface CalendarDay {
 
 const FEATURES = [
   {
-    icon: '🎯',
+    icon: null,
+    svgIcon: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="3"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/></svg>',
     title: 'MoveNet Pose Detection',
     desc: 'Real-time 17-point skeleton tracking at 15+ FPS powered by TensorFlow.js — works entirely in your browser.',
     gradient: 'from-cyan-500 to-blue-500',
     border: 'border-cyan-500/20',
     bg: 'from-cyan-500/10 to-blue-500/5',
+    textIcon: 'POSE',
+    iconColor: 'text-cyan-400',
   },
   {
-    icon: '🧠',
+    icon: null,
+    svgIcon: null,
     title: 'Gemini AI Analysis',
     desc: 'Intelligent form scoring and real-time coaching powered by Google Gemini 2.5 Flash with multi-model fallback.',
     gradient: 'from-violet-500 to-fuchsia-500',
     border: 'border-violet-500/20',
     bg: 'from-violet-500/10 to-fuchsia-500/5',
+    textIcon: 'AI',
+    iconColor: 'text-violet-400',
   },
   {
-    icon: '🎙️',
+    icon: null,
+    svgIcon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>',
     title: 'Voice Coach',
     desc: 'Always-listening duplex voice agent with Sarvam AI — interrupt naturally and get spoken coaching feedback.',
     gradient: 'from-emerald-500 to-teal-500',
     border: 'border-emerald-500/20',
     bg: 'from-emerald-500/10 to-teal-500/5',
+    textIcon: 'MIC',
+    iconColor: 'text-emerald-400',
   },
   {
-    icon: '📊',
+    icon: null,
+    svgIcon: null,
     title: 'Smart Scoring',
     desc: 'Blended angle-based + AI scoring with per-rep tracking, phase detection, and visual feedback overlay.',
     gradient: 'from-amber-500 to-orange-500',
     border: 'border-amber-500/20',
     bg: 'from-amber-500/10 to-orange-500/5',
+    textIcon: '%',
+    iconColor: 'text-amber-400',
   },
 ];
 
 const EXERCISE_CARDS = [
   // Bodyweight / Home
-  { id: 'squat', name: 'Squat', icon: '🦵', gradient: 'from-blue-500 to-cyan-500', shadow: 'shadow-blue-500/20' },
-  { id: 'pushup', name: 'Push-up', icon: '💪', gradient: 'from-red-500 to-orange-500', shadow: 'shadow-red-500/20' },
-  { id: 'lunge', name: 'Lunge', icon: '🏃', gradient: 'from-green-500 to-emerald-500', shadow: 'shadow-green-500/20' },
-  { id: 'jumping_jacks', name: 'Jumping Jacks', icon: '⭐', gradient: 'from-yellow-500 to-amber-500', shadow: 'shadow-yellow-500/20' },
-  { id: 'high_knees', name: 'High Knees', icon: '🔥', gradient: 'from-orange-500 to-red-500', shadow: 'shadow-orange-500/20' },
-  { id: 'glute_bridge', name: 'Glute Bridge', icon: '🍑', gradient: 'from-pink-500 to-rose-500', shadow: 'shadow-pink-500/20' },
-  { id: 'calf_raise', name: 'Calf Raise', icon: '🦶', gradient: 'from-teal-500 to-cyan-500', shadow: 'shadow-teal-500/20' },
-  { id: 'tricep_dip', name: 'Tricep Dip', icon: '🪑', gradient: 'from-indigo-500 to-blue-500', shadow: 'shadow-indigo-500/20' },
-  { id: 'wall_sit', name: 'Wall Sit', icon: '🧱', gradient: 'from-stone-500 to-gray-500', shadow: 'shadow-stone-500/20' },
-  { id: 'sumo_squat', name: 'Sumo Squat', icon: '🏯', gradient: 'from-purple-500 to-violet-500', shadow: 'shadow-purple-500/20' },
-  { id: 'standing_crunch', name: 'Standing Crunch', icon: '🎯', gradient: 'from-lime-500 to-green-500', shadow: 'shadow-lime-500/20' },
-  { id: 'leg_raise', name: 'Leg Raise', icon: '🦿', gradient: 'from-sky-500 to-blue-500', shadow: 'shadow-sky-500/20' },
+  { id: 'squat', name: 'Squat', abbr: 'SQ', gradient: 'from-blue-500 to-cyan-500', shadow: 'shadow-blue-500/20' },
+  { id: 'pushup', name: 'Push-up', abbr: 'PU', gradient: 'from-red-500 to-orange-500', shadow: 'shadow-red-500/20' },
+  { id: 'lunge', name: 'Lunge', abbr: 'LN', gradient: 'from-green-500 to-emerald-500', shadow: 'shadow-green-500/20' },
+  { id: 'jumping_jacks', name: 'Jumping Jacks', abbr: 'JJ', gradient: 'from-yellow-500 to-amber-500', shadow: 'shadow-yellow-500/20' },
+  { id: 'high_knees', name: 'High Knees', abbr: 'HK', gradient: 'from-orange-500 to-red-500', shadow: 'shadow-orange-500/20' },
+  { id: 'glute_bridge', name: 'Glute Bridge', abbr: 'GB', gradient: 'from-pink-500 to-rose-500', shadow: 'shadow-pink-500/20' },
+  { id: 'calf_raise', name: 'Calf Raise', abbr: 'CR', gradient: 'from-teal-500 to-cyan-500', shadow: 'shadow-teal-500/20' },
+  { id: 'tricep_dip', name: 'Tricep Dip', abbr: 'TD', gradient: 'from-indigo-500 to-blue-500', shadow: 'shadow-indigo-500/20' },
+  { id: 'wall_sit', name: 'Wall Sit', abbr: 'WS', gradient: 'from-stone-500 to-gray-500', shadow: 'shadow-stone-500/20' },
+  { id: 'sumo_squat', name: 'Sumo Squat', abbr: 'SS', gradient: 'from-purple-500 to-violet-500', shadow: 'shadow-purple-500/20' },
+  { id: 'standing_crunch', name: 'Standing Crunch', abbr: 'SC', gradient: 'from-lime-500 to-green-500', shadow: 'shadow-lime-500/20' },
+  { id: 'leg_raise', name: 'Leg Raise', abbr: 'LR', gradient: 'from-sky-500 to-blue-500', shadow: 'shadow-sky-500/20' },
   // Dumbbell / Gym
-  { id: 'bicep_curl', name: 'Bicep Curl', icon: '🦾', gradient: 'from-violet-500 to-purple-500', shadow: 'shadow-violet-500/20' },
-  { id: 'shoulder_press', name: 'Shoulder Press', icon: '🏋️', gradient: 'from-amber-500 to-yellow-500', shadow: 'shadow-amber-500/20' },
-  { id: 'lateral_raise', name: 'Lateral Raise', icon: '🪽', gradient: 'from-fuchsia-500 to-pink-500', shadow: 'shadow-fuchsia-500/20' },
-  { id: 'front_raise', name: 'Front Raise', icon: '🫴', gradient: 'from-rose-500 to-red-500', shadow: 'shadow-rose-500/20' },
-  { id: 'dumbbell_row', name: 'Dumbbell Row', icon: '🚣', gradient: 'from-emerald-500 to-teal-500', shadow: 'shadow-emerald-500/20' },
-  { id: 'hammer_curl', name: 'Hammer Curl', icon: '🔨', gradient: 'from-slate-500 to-zinc-500', shadow: 'shadow-slate-500/20' },
-  { id: 'deadlift', name: 'Deadlift', icon: '🏗️', gradient: 'from-red-600 to-orange-500', shadow: 'shadow-red-600/20' },
-  { id: 'goblet_squat', name: 'Goblet Squat', icon: '🏆', gradient: 'from-cyan-500 to-blue-500', shadow: 'shadow-cyan-500/20' },
-  { id: 'overhead_tricep', name: 'Overhead Tricep', icon: '🙆', gradient: 'from-violet-600 to-indigo-500', shadow: 'shadow-violet-600/20' },
+  { id: 'bicep_curl', name: 'Bicep Curl', abbr: 'BC', gradient: 'from-violet-500 to-purple-500', shadow: 'shadow-violet-500/20' },
+  { id: 'shoulder_press', name: 'Shoulder Press', abbr: 'SP', gradient: 'from-amber-500 to-yellow-500', shadow: 'shadow-amber-500/20' },
+  { id: 'lateral_raise', name: 'Lateral Raise', abbr: 'LT', gradient: 'from-fuchsia-500 to-pink-500', shadow: 'shadow-fuchsia-500/20' },
+  { id: 'front_raise', name: 'Front Raise', abbr: 'FR', gradient: 'from-rose-500 to-red-500', shadow: 'shadow-rose-500/20' },
+  { id: 'dumbbell_row', name: 'Dumbbell Row', abbr: 'DR', gradient: 'from-emerald-500 to-teal-500', shadow: 'shadow-emerald-500/20' },
+  { id: 'hammer_curl', name: 'Hammer Curl', abbr: 'HC', gradient: 'from-slate-500 to-zinc-500', shadow: 'shadow-slate-500/20' },
+  { id: 'deadlift', name: 'Deadlift', abbr: 'DL', gradient: 'from-red-600 to-orange-500', shadow: 'shadow-red-600/20' },
+  { id: 'goblet_squat', name: 'Goblet Squat', abbr: 'GS', gradient: 'from-cyan-500 to-blue-500', shadow: 'shadow-cyan-500/20' },
+  { id: 'overhead_tricep', name: 'Overhead Tricep', abbr: 'OT', gradient: 'from-violet-600 to-indigo-500', shadow: 'shadow-violet-600/20' },
 ];
 
 export function HomePage() {
@@ -205,14 +217,14 @@ export function HomePage() {
               to="/workout"
               className="group relative px-8 py-4 rounded-2xl font-bold text-white text-lg bg-gradient-to-r from-emerald-500 to-cyan-500 shadow-[0_8px_32px_rgba(52,211,153,0.3)] hover:shadow-[0_12px_48px_rgba(52,211,153,0.5)] hover:-translate-y-1 active:translate-y-0 transition-all duration-300"
             >
-              🚀 Start Training
+              Start Training
               <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-400 to-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-xl -z-10" />
             </Link>
             <Link
               to="/history"
               className="px-8 py-4 rounded-2xl font-bold text-white/70 bg-white/[0.04] border border-white/[0.1] hover:bg-white/[0.08] hover:text-white transition-all duration-300"
             >
-              📊 View History
+              View History
             </Link>
           </div>
 
@@ -222,7 +234,7 @@ export function HomePage() {
               onClick={handleLanguageToggle}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/[0.05] border border-white/[0.1] hover:bg-white/[0.1] transition-all duration-200"
             >
-              <span className="text-lg">{language === 'hi-IN' ? '🇮🇳' : '🇬🇧'}</span>
+              <span className="text-lg">{language === 'hi-IN' ? 'HI' : 'EN'}</span>
               <span className="text-white/70 font-medium text-sm">
                 Voice Coach: {language === 'hi-IN' ? 'हिंदी' : 'English'}
               </span>
@@ -235,7 +247,7 @@ export function HomePage() {
             <div className="mt-8 animate-fade-in-up anim-delay-400">
               <span className="text-white/30 text-sm">Welcome back, </span>
               <span className="text-emerald-400 font-bold">{userName}</span>
-              <span className="text-white/30 text-sm"> 👋</span>
+              <span className="text-white/30 text-sm"> </span>
             </div>
           )}
         </div>
@@ -244,17 +256,17 @@ export function HomePage() {
       {/* ═══════ STATS ═══════ */}
       <section className="max-w-6xl mx-auto px-6 -mt-14 relative z-10 mb-16">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-          <StatCard value={stats.totalSessions} label="Workouts" icon="🏋️" color="emerald" />
-          <StatCard value={stats.totalReps} label="Total Reps" icon="🔄" color="cyan" />
-          <StatCard value={stats.avgScore > 0 ? `${stats.avgScore}%` : '—'} label="Avg Score" icon="⭐" color="amber" />
-          <StatCard value={stats.streak} label="Day Streak" icon="🔥" color="red" />
+          <StatCard value={stats.totalSessions} label="Workouts" icon="W" color="emerald" />
+          <StatCard value={stats.totalReps} label="Total Reps" icon="R" color="cyan" />
+          <StatCard value={stats.avgScore > 0 ? `${stats.avgScore}%` : '—'} label="Avg Score" icon="S" color="amber" />
+          <StatCard value={stats.streak} label="Day Streak" icon="D" color="red" />
         </div>
       </section>
 
       {/* ═══════ CALENDAR ═══════ */}
       {userId && (
         <section className="max-w-6xl mx-auto px-6 mb-16 animate-fade-in-up">
-          <SectionHeader icon="📅" title="Workout Calendar" subtitle="Your training consistency this month" />
+          <SectionHeader title="Workout Calendar" subtitle="Your training consistency this month" />
           <CalendarHeatmap data={calendar} />
         </section>
       )}
@@ -274,9 +286,9 @@ export function HomePage() {
               className={`glass-card p-6 border ${f.border} group hover:-translate-y-2 hover:shadow-2xl transition-all duration-300`}
             >
               <div
-                className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${f.bg} flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform duration-300`}
+                className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${f.bg} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}
               >
-                {f.icon}
+                <span className={`text-sm font-black ${f.iconColor}`}>{f.textIcon}</span>
               </div>
               <h3 className="text-white font-bold mb-2 text-sm">{f.title}</h3>
               <p className="text-white/35 text-sm leading-relaxed">{f.desc}</p>
@@ -299,9 +311,9 @@ export function HomePage() {
               className={`glass-card p-6 text-center group hover:-translate-y-2 hover:shadow-2xl ${ex.shadow} transition-all duration-300 border border-white/[0.06] hover:border-white/[0.15]`}
             >
               <div
-                className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${ex.gradient} flex items-center justify-center text-3xl mx-auto mb-3 shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}
+                className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${ex.gradient} flex items-center justify-center mx-auto mb-3 shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}
               >
-                {ex.icon}
+                <span className="text-sm font-black text-white">{ex.abbr}</span>
               </div>
               <div className="text-white font-bold text-sm">{ex.name}</div>
               <div className="text-white/20 text-xs mt-1">Start now →</div>
@@ -345,11 +357,11 @@ export function HomePage() {
 
 /* ─────── Sub-components ─────── */
 
-function SectionHeader({ icon, title, subtitle }: { icon: string; title: string; subtitle: string }) {
+function SectionHeader({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <div className="flex items-center gap-3 mb-6">
       <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/30 to-fuchsia-500/30 flex items-center justify-center shadow-inner">
-        <span className="text-xl">{icon}</span>
+        <div className="w-2 h-2 rounded-full bg-violet-400" />
       </div>
       <div>
         <h2 className="text-white font-bold text-xl">{title}</h2>
@@ -371,7 +383,7 @@ function StatCard({ value, label, icon, color }: { value: number | string; label
   return (
     <div className={`glass-card p-5 bg-gradient-to-b ${s.card} border group hover:-translate-y-1 hover:shadow-lg transition-all duration-300`}>
       <div className="flex items-center gap-2 mb-2">
-        <span className="text-lg">{icon}</span>
+        <span className={`text-sm font-black ${s.text}`}>{icon}</span>
         <span className="text-white/30 text-[10px] font-bold uppercase tracking-wider">{label}</span>
       </div>
       <div className={`text-3xl font-black font-mono ${s.text} leading-none`}>{value}</div>
@@ -386,8 +398,8 @@ function OnboardingModal({ onComplete }: { onComplete: (name: string) => void })
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md">
       <div className="glass-card p-8 max-w-md w-full mx-4 border border-white/[0.1] animate-fade-in-up shadow-2xl">
         <div className="text-center mb-6">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center text-3xl mx-auto mb-4 shadow-xl shadow-emerald-500/30">
-            🏋️
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center mx-auto mb-4 shadow-xl shadow-emerald-500/30">
+            <span className="text-sm font-black text-white">FIT</span>
           </div>
           <h2 className="text-2xl font-black text-white mb-2">Welcome to FitSenseAI</h2>
           <p className="text-white/35 text-sm">Set up your profile to track progress and personalize coaching</p>
@@ -411,7 +423,7 @@ function OnboardingModal({ onComplete }: { onComplete: (name: string) => void })
             onClick={() => onComplete(name.trim() || 'Athlete')}
             className="w-full py-3.5 rounded-xl font-bold text-white bg-gradient-to-r from-emerald-500 to-cyan-500 shadow-[0_4px_20px_rgba(52,211,153,0.3)] hover:shadow-[0_4px_30px_rgba(52,211,153,0.5)] hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-30 transition-all duration-200"
           >
-            Let's Go! 🚀
+            Let's Go!
           </button>
 
           <button

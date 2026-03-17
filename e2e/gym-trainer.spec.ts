@@ -265,7 +265,7 @@ test.describe('AI Gym Trainer — E2E', () => {
       data: { sessionId, exerciseId: 'squat' },
     });
 
-    // Score of 45 should NOT trigger urgent (threshold is 40)
+    // Score of 45 should NOT trigger urgent (threshold is 40 for urgent)
     const poseRes = await request.post('http://localhost:4000/api/events/pose', {
       data: { sessionId, score: 45, issues: ['Slightly off'] },
     });

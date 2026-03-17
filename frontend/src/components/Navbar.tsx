@@ -5,9 +5,9 @@
 import { Link, useLocation } from 'react-router-dom';
 
 const NAV_LINKS = [
-  { path: '/', label: 'Home', icon: '🏠' },
-  { path: '/workout', label: 'Workout', icon: '🏋️' },
-  { path: '/history', label: 'History', icon: '📊' },
+  { path: '/', label: 'Home', icon: 'H' },
+  { path: '/workout', label: 'Workout', icon: 'W' },
+  { path: '/history', label: 'History', icon: 'S' },
 ];
 
 export function Navbar() {
@@ -19,7 +19,7 @@ export function Navbar() {
         {/* Brand */}
         <Link to="/" className="flex items-center gap-3 group">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:shadow-emerald-500/40 transition-all duration-300 group-hover:scale-105">
-            <span className="text-xl">🏋️</span>
+            <span className="text-xs font-black text-white">FIT</span>
           </div>
           <div className="hidden sm:block">
             <span className="text-lg font-extrabold text-white">FitSense</span>

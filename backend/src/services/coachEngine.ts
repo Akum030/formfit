@@ -46,6 +46,8 @@ export class CoachEngine {
   private lastMotivationTime = 0;
   private lastRepCounted = 0;
   private lastUrgentCoachTime = 0;
+  private lastUserSpeechTime = 0;           // Suppress auto-coaching after user speech
+  private userSpeechInProgress = false;      // True while STT→Gemini→TTS pipeline runs
   private abortController: AbortController | null = null;
 
   constructor(
@@ -111,6 +113,7 @@ export class CoachEngine {
   async checkFormCoaching(): Promise<CoachResponse | null> {
     const now = Date.now();
     if (now - this.lastFormCoachTime < MIN_FORM_INTERVAL_MS) return null;
+    if (this.userSpeechInProgress || now - this.lastUserSpeechTime < 10000) return null;
     if (this.sessionState.currentScore >= 75) return null;
     if (this.sessionState.currentIssues.length === 0) return null;
 
@@ -178,6 +181,7 @@ export class CoachEngine {
   async checkMotivationCoaching(): Promise<CoachResponse | null> {
     const now = Date.now();
     if (now - this.lastMotivationTime < MIN_MOTIVATION_INTERVAL_MS) return null;
+    if (this.userSpeechInProgress || now - this.lastUserSpeechTime < 10000) return null;
     this.lastMotivationTime = now;
     return this.generateCoaching('form');
   }
@@ -200,8 +204,10 @@ export class CoachEngine {
   async handleUserSpeech(transcript: string): Promise<CoachResponse | null> {
     if (!transcript.trim()) return null;
 
-    // Cancel any in-flight coaching
+    // Cancel any in-flight coaching and suppress auto-coaching
     this.cancelPending();
+    this.userSpeechInProgress = true;
+    this.lastUserSpeechTime = Date.now();
 
     const ctx: CoachingContext = {
       ...this.sessionState,
@@ -217,10 +223,13 @@ export class CoachEngine {
       } catch (ttsErr) {
         console.warn('[CoachEngine] TTS failed, sending text-only response:', ttsErr);
       }
+      this.lastUserSpeechTime = Date.now(); // Reset after response is ready
       return { text, audioBase64, trigger: 'user_speech' };
     } catch (err) {
       console.error('[CoachEngine] user speech coaching error:', err);
       return null;
+    } finally {
+      this.userSpeechInProgress = false;
     }
   }
 
