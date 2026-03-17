@@ -105,6 +105,15 @@ export function useFormScoring({
       const min = scores.length > 0 ? Math.min(...scores) : 0;
       const issues = [...new Set(issuesForRep.current)];
 
+      // Only count the rep if form quality is above minimum threshold (40%)
+      if (avg < 40) {
+        // Bad form — reject the rep, reset phase but don't increment count
+        phaseStateRef.current = { ...newState, repCount: prevState.repCount, wasAtBottom: false };
+        frameScoresForRep.current = [];
+        issuesForRep.current = [];
+        return;
+      }
+
       const repScore: RepScore = {
         repNumber: newState.repCount,
         avgScore: avg,
@@ -284,13 +293,13 @@ function scoreCurrentFrame(
     const targetConstraints = exercise.angleConstraints.filter((c) => c.phase === targetPhase);
     if (targetConstraints.length > 0) {
       const effectiveConstraints = selectBestSideConstraints(keypoints, targetConstraints);
-      const { weightedScore, totalWeight, issues } = scoreConstraints(keypoints, effectiveConstraints, 60);
+      const { weightedScore, totalWeight, issues } = scoreConstraints(keypoints, effectiveConstraints, 45);
       if (totalWeight === 0) {
         return { score: 0.6, scorePercent: 60, issues: [], phase: currentPhase };
       }
-      // Floor at 50% during transitions - credit for being in motion
+      // Floor at 35% during transitions - still credit for motion but not too generous
       const rawScore = weightedScore / totalWeight;
-      const adjustedScore = Math.max(0.5, rawScore);
+      const adjustedScore = Math.max(0.35, rawScore);
       return {
         score: adjustedScore,
         scorePercent: Math.round(adjustedScore * 100),
@@ -301,9 +310,9 @@ function scoreCurrentFrame(
     return { score: 0.7, scorePercent: 70, issues: [], phase: currentPhase };
   }
 
-  // Normal phase scoring (top/bottom) with wider margin
+  // Normal phase scoring (top/bottom) — strict margin for accurate form detection
   const effectiveConstraints = selectBestSideConstraints(keypoints, phaseConstraints);
-  const { weightedScore, totalWeight, issues } = scoreConstraints(keypoints, effectiveConstraints, 45);
+  const { weightedScore, totalWeight, issues } = scoreConstraints(keypoints, effectiveConstraints, 35);
 
   if (totalWeight === 0) {
     return {

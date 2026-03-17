@@ -234,7 +234,7 @@ test.describe('AI Gym Trainer — E2E', () => {
     expect(body.coaching.trigger).toBe('set_transition');
   });
 
-  test('urgent form interruption triggers at score below 30', async ({ request }) => {
+  test('urgent form interruption triggers at score below 40', async ({ request }) => {
     const sessionRes = await request.post('http://localhost:4000/api/sessions', {
       data: { exerciseId: 'squat' },
     });
@@ -250,12 +250,12 @@ test.describe('AI Gym Trainer — E2E', () => {
     });
     expect(poseRes.ok()).toBeTruthy();
     const body = await poseRes.json();
-    // With score 15 (< 30), urgent coaching should fire
+    // With score 15 (< 40), urgent coaching should fire
     expect(body.coaching).toBeDefined();
     expect(body.coaching.text).toBeTruthy();
   });
 
-  test('score above 30 does not trigger urgent interruption', async ({ request }) => {
+  test('score above 40 does not trigger urgent interruption', async ({ request }) => {
     const sessionRes = await request.post('http://localhost:4000/api/sessions', {
       data: { exerciseId: 'squat' },
     });
@@ -265,9 +265,9 @@ test.describe('AI Gym Trainer — E2E', () => {
       data: { sessionId, exerciseId: 'squat' },
     });
 
-    // Score of 35 should NOT trigger urgent (threshold is 30)
+    // Score of 45 should NOT trigger urgent (threshold is 40)
     const poseRes = await request.post('http://localhost:4000/api/events/pose', {
-      data: { sessionId, score: 35, issues: ['Slightly off'] },
+      data: { sessionId, score: 45, issues: ['Slightly off'] },
     });
     expect(poseRes.ok()).toBeTruthy();
     const body = await poseRes.json();

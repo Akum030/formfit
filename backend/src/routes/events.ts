@@ -52,8 +52,8 @@ eventsRouter.post('/events/pose', async (req: Request, res: Response) => {
 
     // Check for urgent form interruption first — push directly via WebSocket
     const urgent = await engine.checkUrgentFormInterruption();
-    if (urgent && urgent.audioBase64) {
-      sendCoachingToVoice(sessionId, urgent.text, urgent.audioBase64, urgent.trigger);
+    if (urgent && urgent.text) {
+      sendCoachingToVoice(sessionId, urgent.text, urgent.audioBase64 || '', urgent.trigger);
       res.json({ coaching: { text: urgent.text, audioBase64: urgent.audioBase64, trigger: urgent.trigger } });
       return;
     }
@@ -65,8 +65,8 @@ eventsRouter.post('/events/pose', async (req: Request, res: Response) => {
     }
 
     // Also push coaching through WebSocket for voice playback
-    if (coaching && coaching.audioBase64) {
-      sendCoachingToVoice(sessionId, coaching.text, coaching.audioBase64, coaching.trigger);
+    if (coaching && coaching.text) {
+      sendCoachingToVoice(sessionId, coaching.text, coaching.audioBase64 || '', coaching.trigger);
     }
 
     res.json({

@@ -126,7 +126,7 @@ export class CoachEngine {
   async checkUrgentFormInterruption(): Promise<CoachResponse | null> {
     const now = Date.now();
     if (now - this.lastUrgentCoachTime < URGENT_FORM_INTERVAL_MS) return null;
-    if (this.sessionState.currentScore >= 30) return null;
+    if (this.sessionState.currentScore >= 40) return null;
     if (this.sessionState.currentIssues.length === 0) return null;
 
     this.lastUrgentCoachTime = now;
