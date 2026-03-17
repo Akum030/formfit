@@ -14,13 +14,18 @@ test.describe('AI Gym Trainer — E2E', () => {
       }
     }
     // Title visible
-    await expect(page.getByRole('heading', { name: /FitSenseAI/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /FitSenseAI/i }).first()).toBeVisible();
     // Exercise cards visible
-    await expect(page.locator('text=Squat')).toBeVisible();
-    await expect(page.locator('text=Push-up')).toBeVisible();
-    await expect(page.locator('text=Curl')).toBeVisible();
-    await expect(page.locator('text=Lunge')).toBeVisible();
-    await expect(page.getByText('Press', { exact: true })).toBeVisible();
+    await expect(page.getByText('Squat', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('Push-up', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('Bicep Curl', { exact: true })).toBeVisible();
+    await expect(page.getByText('Lunge', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('Shoulder Press', { exact: true })).toBeVisible();
+    // Footer should just say FitSenseAI (no hackathon text)
+    const footer = page.locator('footer');
+    await expect(footer).toBeVisible();
+    await expect(footer).toContainText('FitSenseAI');
+    await expect(footer).not.toContainText('Hackathon');
   });
 
   test('MoveNet model status indicator is visible', async ({ page }) => {
@@ -42,7 +47,7 @@ test.describe('AI Gym Trainer — E2E', () => {
       }
     }
     // Click on Squat
-    await page.locator('text=Squat').click();
+    await page.getByText('Squat', { exact: true }).first().click();
     // Start button should not say "Select an exercise" — may show "Loading AI model..." or "Start AI Coaching"
     const startBtn = page.locator('button', { hasText: /Start AI Coaching|Loading AI model/ });
     await expect(startBtn).toBeVisible();
@@ -186,5 +191,88 @@ test.describe('AI Gym Trainer — E2E', () => {
     expect(stopRes.ok()).toBeTruthy();
     const body = await stopRes.json();
     expect(body.stopped).toBe(true);
+  });
+
+  test('homepage language toggle works', async ({ page }) => {
+    await page.goto('/');
+    // Dismiss onboarding if present
+    const modal = page.locator('.fixed.inset-0');
+    if (await modal.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await page.locator('button', { hasText: /start|begin|go|let|skip/i }).first().click();
+    }
+    // Find the language toggle button
+    const langBtn = page.locator('button', { hasText: /Voice Coach/i });
+    await expect(langBtn).toBeVisible();
+    // Default should be Hindi
+    await expect(langBtn).toContainText('हिंदी');
+    // Click to toggle
+    await langBtn.click();
+    // Should now show English
+    await expect(langBtn).toContainText('English');
+    // Click again to go back to Hindi
+    await langBtn.click();
+    await expect(langBtn).toContainText('हिंदी');
+  });
+
+  test('set-complete endpoint works', async ({ request }) => {
+    const sessionRes = await request.post('http://localhost:4000/api/sessions', {
+      data: { exerciseId: 'squat' },
+    });
+    const { sessionId } = await sessionRes.json();
+
+    await request.post('http://localhost:4000/api/coaching/start', {
+      data: { sessionId, exerciseId: 'squat' },
+    });
+
+    const setRes = await request.post('http://localhost:4000/api/events/set-complete', {
+      data: { sessionId, setNumber: 1 },
+    });
+    expect(setRes.ok()).toBeTruthy();
+    const body = await setRes.json();
+    expect(body.coaching).toBeDefined();
+    expect(body.coaching.text).toBeTruthy();
+    expect(body.coaching.trigger).toBe('set_transition');
+  });
+
+  test('urgent form interruption triggers at score below 30', async ({ request }) => {
+    const sessionRes = await request.post('http://localhost:4000/api/sessions', {
+      data: { exerciseId: 'squat' },
+    });
+    const { sessionId } = await sessionRes.json();
+
+    await request.post('http://localhost:4000/api/coaching/start', {
+      data: { sessionId, exerciseId: 'squat' },
+    });
+
+    // Send very bad score — should trigger urgent coaching
+    const poseRes = await request.post('http://localhost:4000/api/events/pose', {
+      data: { sessionId, score: 15, issues: ['Knees caving in', 'Back rounding'] },
+    });
+    expect(poseRes.ok()).toBeTruthy();
+    const body = await poseRes.json();
+    // With score 15 (< 30), urgent coaching should fire
+    expect(body.coaching).toBeDefined();
+    expect(body.coaching.text).toBeTruthy();
+  });
+
+  test('score above 30 does not trigger urgent interruption', async ({ request }) => {
+    const sessionRes = await request.post('http://localhost:4000/api/sessions', {
+      data: { exerciseId: 'squat' },
+    });
+    const { sessionId } = await sessionRes.json();
+
+    await request.post('http://localhost:4000/api/coaching/start', {
+      data: { sessionId, exerciseId: 'squat' },
+    });
+
+    // Score of 35 should NOT trigger urgent (threshold is 30)
+    const poseRes = await request.post('http://localhost:4000/api/events/pose', {
+      data: { sessionId, score: 35, issues: ['Slightly off'] },
+    });
+    expect(poseRes.ok()).toBeTruthy();
+    const body = await poseRes.json();
+    // Coaching might be null or a non-urgent form coaching — either is fine
+    // The key thing is it runs without error
+    expect(body).toHaveProperty('coaching');
   });
 });

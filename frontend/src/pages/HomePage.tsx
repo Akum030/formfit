@@ -2,7 +2,7 @@
  * HomePage — Stunning landing page with hero, stats, calendar, features, and quick-start.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { CalendarHeatmap } from '../components/CalendarHeatmap';
 
@@ -97,6 +97,15 @@ export function HomePage() {
   const [stats, setStats] = useState<UserStats>({ totalSessions: 0, totalReps: 0, avgScore: 0, streak: 0 });
   const [calendar, setCalendar] = useState<CalendarDay[]>([]);
   const [showOnboarding, setShowOnboarding] = useState(!getUserId());
+  const [language, setLanguage] = useState<string>(() => localStorage.getItem('gym-language') || 'hi-IN');
+
+  const handleLanguageToggle = useCallback(() => {
+    setLanguage((prev) => {
+      const next = prev === 'hi-IN' ? 'en-IN' : 'hi-IN';
+      localStorage.setItem('gym-language', next);
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     if (userId) {
@@ -207,6 +216,20 @@ export function HomePage() {
             </Link>
           </div>
 
+          {/* Language Toggle */}
+          <div className="mt-6 animate-fade-in-up anim-delay-350">
+            <button
+              onClick={handleLanguageToggle}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/[0.05] border border-white/[0.1] hover:bg-white/[0.1] transition-all duration-200"
+            >
+              <span className="text-lg">{language === 'hi-IN' ? '🇮🇳' : '🇬🇧'}</span>
+              <span className="text-white/70 font-medium text-sm">
+                Voice Coach: {language === 'hi-IN' ? 'हिंदी' : 'English'}
+              </span>
+              <span className="text-white/30 text-xs">tap to switch</span>
+            </button>
+          </div>
+
           {/* Welcome back */}
           {userId && userName && (
             <div className="mt-8 animate-fade-in-up anim-delay-400">
@@ -313,7 +336,7 @@ export function HomePage() {
       {/* ═══════ FOOTER ═══════ */}
       <footer className="border-t border-white/[0.04] py-8">
         <div className="max-w-6xl mx-auto px-6 text-center">
-          <p className="text-white/15 text-sm">FitSenseAI · Hackathon 2026 · Built with ❤️ and AI</p>
+          <p className="text-white/15 text-sm">FitSenseAI</p>
         </div>
       </footer>
     </div>

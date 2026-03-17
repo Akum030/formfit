@@ -63,6 +63,15 @@ export function useVoiceAgent({
   // Interrupt debounce state
   const interruptFrameCount = useRef(0);
   const speakEndTime = useRef(0);
+  const languageRef = useRef(language);
+
+  // Send language change to backend via WebSocket control message
+  useEffect(() => {
+    languageRef.current = language;
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: 'set_language', language }));
+    }
+  }, [language]);
 
   // Play coaching audio via Web Audio API
   const playCoachingAudio = useCallback((audioBase64: string) => {

@@ -45,6 +45,8 @@ function WorkoutPage() {
   const [lastCoaching, setLastCoaching] = useState<CoachingMessage | null>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [language, setLanguage] = useState<string>(() => localStorage.getItem('gym-language') || 'hi-IN');
+  const [isResting, setIsResting] = useState(false);
+  const [restTimeLeft, setRestTimeLeft] = useState(0);
 
   // Auto-select exercise from URL query param (e.g. /workout?exercise=squat)
   useEffect(() => {
@@ -65,7 +67,7 @@ function WorkoutPage() {
     exercise: selectedExercise,
     keypoints,
     sessionId,
-    isActive: isSessionActive && !isPaused,
+    isActive: isSessionActive && !isPaused && !isResting,
   });
 
   // Voice Agent
@@ -94,6 +96,58 @@ function WorkoutPage() {
   const blendedScore = aiScore !== null
     ? Math.round(avgSessionScore * 0.4 + aiScore * 0.6) // AI gets more weight when available
     : avgSessionScore;
+
+  const targetReps = selectedExercise?.defaultReps ?? 12;
+  const targetSets = selectedExercise?.defaultSets ?? 3;
+  const restSeconds = selectedExercise?.restSeconds ?? 30;
+
+  // Auto set completion: when reps reach target, trigger rest
+  const setCompletionTriggered = useRef(false);
+  const endSessionRef = useRef<() => void>(() => {});
+  useEffect(() => {
+    if (!isSessionActive || isPaused || isResting) return;
+    if (repCount >= targetReps && !setCompletionTriggered.current) {
+      setCompletionTriggered.current = true;
+
+      // Send set-complete event to backend
+      if (sessionId) {
+        fetch(`${API_BASE}/api/events/set-complete`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId, setNumber }),
+        }).catch(() => {});
+      }
+
+      if (setNumber >= targetSets) {
+        // All sets done — end workout
+        endSessionRef.current();
+        return;
+      }
+
+      // Start rest timer
+      setIsResting(true);
+      setRestTimeLeft(restSeconds);
+    }
+  }, [repCount, targetReps, isSessionActive, isPaused, isResting, sessionId, setNumber, targetSets, restSeconds]);
+
+  // Rest countdown timer
+  useEffect(() => {
+    if (!isResting) return;
+    const timer = setInterval(() => {
+      setRestTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          // Rest finished — start next set
+          setIsResting(false);
+          setCompletionTriggered.current = false;
+          incrementSet();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [isResting, incrementSet]);
 
   // Camera ready → start MoveNet
   const handleVideoReady = useCallback((video: HTMLVideoElement) => {
@@ -197,8 +251,14 @@ function WorkoutPage() {
     setSessionId(null);
     setIsPaused(false);
     setLastCoaching(null);
+    setIsResting(false);
+    setRestTimeLeft(0);
+    setCompletionTriggered.current = false;
     stopDetection();
   }, [sessionId, avgSessionScore, repCount, stopDetection]);
+
+  // Keep ref updated for use in effects defined before handleEndSession
+  endSessionRef.current = handleEndSession;
 
   // Pause/resume
   const handlePause = useCallback(() => {
@@ -259,6 +319,21 @@ function WorkoutPage() {
                 </div>
               </div>
             )}
+
+            {/* Rest timer overlay on camera */}
+            {isResting && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-15">
+                <div className="text-center">
+                  <div className="text-cyan-400 text-sm font-bold uppercase tracking-wider mb-2">REST</div>
+                  <div className="text-7xl font-black text-white font-mono drop-shadow-[0_0_20px_rgba(6,182,212,0.4)]">
+                    {restTimeLeft}s
+                  </div>
+                  <div className="text-white/50 text-sm mt-3">
+                    Set {setNumber} complete — next set soon
+                  </div>
+                </div>
+              </div>
+            )}
           </CameraView>
         </div>
 
@@ -278,8 +353,8 @@ function WorkoutPage() {
               repScores={repScores}
               repCount={repCount}
               setNumber={setNumber}
-              targetReps={selectedExercise?.defaultReps ?? 12}
-              targetSets={selectedExercise?.defaultSets ?? 3}
+              targetReps={targetReps}
+              targetSets={targetSets}
               avgSessionScore={avgSessionScore}
               blendedScore={blendedScore}
               phase={phase}
@@ -296,6 +371,9 @@ function WorkoutPage() {
               isAnalyzing={isAnalyzing}
               language={language}
               onLanguageToggle={handleLanguageToggle}
+              isResting={isResting}
+              restTimeLeft={restTimeLeft}
+              restDuration={restSeconds}
             />
           </div>
         </div>

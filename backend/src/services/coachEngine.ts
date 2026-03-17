@@ -126,35 +126,49 @@ export class CoachEngine {
   async checkUrgentFormInterruption(): Promise<CoachResponse | null> {
     const now = Date.now();
     if (now - this.lastUrgentCoachTime < URGENT_FORM_INTERVAL_MS) return null;
-    if (this.sessionState.currentScore >= 40) return null;
+    if (this.sessionState.currentScore >= 30) return null;
     if (this.sessionState.currentIssues.length === 0) return null;
 
     this.lastUrgentCoachTime = now;
     this.lastFormCoachTime = now; // Also reset regular form coaching timer
 
-    const isHindi = this.sessionState.language.startsWith('hi');
-    const issue = this.sessionState.currentIssues[0];
+    // Try Gemini first for intelligent urgent coaching, fall back to hardcoded
+    let text: string;
+    try {
+      const ctx: CoachingContext = {
+        ...this.sessionState,
+        userTranscript: '',
+      };
+      text = await getCoachingFeedback(ctx, this.sessionId);
+    } catch {
+      const isHindi = this.sessionState.language.startsWith('hi');
+      const issue = this.sessionState.currentIssues[0];
+      const hindiUrgent = [
+        `Arre ruko! ${issue}. Pehle form theek karo!`,
+        `Nahi nahi! Galat ho raha hai. ${issue}!`,
+        `Stop! Form bahut kharab hai. ${issue}. Dheere karo!`,
+        `Bhai dhyan se! ${issue}. Injury ho jayegi!`,
+        `Arre! ${issue}. Ruko aur theek se karo!`,
+      ];
+      const enUrgent = [
+        `Stop! ${issue}. Fix your form now!`,
+        `No no no! ${issue}. Slow down and correct it!`,
+        `Hey! Your form is off. ${issue}!`,
+        `Watch it! ${issue}. You'll get hurt!`,
+        `Hold on! ${issue}. Fix that before the next rep!`,
+      ];
+      const pool = isHindi ? hindiUrgent : enUrgent;
+      text = pool[Math.floor(Math.random() * pool.length)];
+    }
 
-    // Direct, urgent corrections — like a trainer yelling
-    const hindiUrgent = [
-      `Arre ruko! ${issue}. Pehle form theek karo!`,
-      `Nahi nahi! Galat ho raha hai. ${issue}!`,
-      `Stop! Form bahut kharab hai. ${issue}. Dheere karo!`,
-      `Bhai dhyan se! ${issue}. Injury ho jayegi!`,
-      `Arre! ${issue}. Ruko aur theek se karo!`,
-    ];
-    const enUrgent = [
-      `Stop! ${issue}. Fix your form now!`,
-      `No no no! ${issue}. Slow down and correct it!`,
-      `Hey! Your form is off. ${issue}!`,
-      `Watch it! ${issue}. You'll get hurt!`,
-      `Hold on! ${issue}. Fix that before the next rep!`,
-    ];
-
-    const pool = isHindi ? hindiUrgent : enUrgent;
-    const text = pool[Math.floor(Math.random() * pool.length)];
-    const tts = await textToSpeech(text, this.sessionState.language);
-    return { text, audioBase64: tts.audioBase64, trigger: 'form' };
+    let audioBase64 = '';
+    try {
+      const tts = await textToSpeech(text, this.sessionState.language);
+      audioBase64 = tts.audioBase64;
+    } catch (ttsErr) {
+      console.warn('[CoachEngine] TTS failed for urgent coaching:', ttsErr);
+    }
+    return { text, audioBase64, trigger: 'form' };
   }
 
   /**
@@ -196,8 +210,14 @@ export class CoachEngine {
 
     try {
       const text = await getCoachingFeedback(ctx, this.sessionId);
-      const tts = await textToSpeech(text, this.sessionState.language);
-      return { text, audioBase64: tts.audioBase64, trigger: 'user_speech' };
+      let audioBase64 = '';
+      try {
+        const tts = await textToSpeech(text, this.sessionState.language);
+        audioBase64 = tts.audioBase64;
+      } catch (ttsErr) {
+        console.warn('[CoachEngine] TTS failed, sending text-only response:', ttsErr);
+      }
+      return { text, audioBase64, trigger: 'user_speech' };
     } catch (err) {
       console.error('[CoachEngine] user speech coaching error:', err);
       return null;
@@ -210,8 +230,12 @@ export class CoachEngine {
     const text = isHindi
       ? `Chalo ${this.sessionState.exerciseName} karte hain! ${this.sessionState.targetSets} sets, har set mein ${this.sessionState.targetReps} reps. Taiyaar ho jao!`
       : `Let's do ${this.sessionState.exerciseName}! ${this.sessionState.targetSets} sets of ${this.sessionState.targetReps}. Get ready!`;
-    const tts = await textToSpeech(text, this.sessionState.language);
-    return { text, audioBase64: tts.audioBase64, trigger: 'session_start' };
+    let audioBase64 = '';
+    try {
+      const tts = await textToSpeech(text, this.sessionState.language);
+      audioBase64 = tts.audioBase64;
+    } catch { /* TTS optional */ }
+    return { text, audioBase64, trigger: 'session_start' };
   }
 
   /** Generate set transition announcement. */
@@ -223,8 +247,12 @@ export class CoachEngine {
           ? `Set ${this.sessionState.setNumber} done! ${remaining} sets aur baki. Thoda rest lo.`
           : `Set ${this.sessionState.setNumber} done! ${remaining} sets to go. Rest up.`)
       : (isHindi ? 'Last set khatam! Zabardast workout!' : 'Last set done! Great workout!');
-    const tts = await textToSpeech(text, this.sessionState.language);
-    return { text, audioBase64: tts.audioBase64, trigger: 'set_transition' };
+    let audioBase64 = '';
+    try {
+      const tts = await textToSpeech(text, this.sessionState.language);
+      audioBase64 = tts.audioBase64;
+    } catch { /* TTS optional */ }
+    return { text, audioBase64, trigger: 'set_transition' };
   }
 
   /** Generate session end summary. */
@@ -236,8 +264,12 @@ export class CoachEngine {
     const text = isHindi
       ? `Workout complete! ${totalReps} total reps, form ${scoreLabel} ${avgScore}% ke saath. Bahut badhiya!`
       : `Workout complete! ${totalReps} total reps with ${scoreLabel} form at ${avgScore}%. Nice job!`;
-    const tts = await textToSpeech(text, this.sessionState.language);
-    return { text, audioBase64: tts.audioBase64, trigger: 'session_end' };
+    let audioBase64 = '';
+    try {
+      const tts = await textToSpeech(text, this.sessionState.language);
+      audioBase64 = tts.audioBase64;
+    } catch { /* TTS optional */ }
+    return { text, audioBase64, trigger: 'session_end' };
   }
 
   /** Cancel any in-flight coaching generation (for interruptibility). */
@@ -255,10 +287,16 @@ export class CoachEngine {
       const text = await getCoachingFeedback(this.sessionState, this.sessionId);
       if (this.abortController.signal.aborted) return null;
 
-      const tts = await textToSpeech(text, this.sessionState.language);
-      if (this.abortController.signal.aborted) return null;
+      let audioBase64 = '';
+      try {
+        const tts = await textToSpeech(text, this.sessionState.language);
+        if (this.abortController.signal.aborted) return null;
+        audioBase64 = tts.audioBase64;
+      } catch (ttsErr) {
+        console.warn('[CoachEngine] TTS failed, sending text-only:', ttsErr);
+      }
 
-      return { text, audioBase64: tts.audioBase64, trigger };
+      return { text, audioBase64, trigger };
     } catch (err) {
       if (this.abortController?.signal.aborted) return null;
       console.error('[CoachEngine] coaching error:', err);

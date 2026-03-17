@@ -156,9 +156,11 @@ async function processAudioBuffer(conn: VoiceConnection) {
           sendJSON(conn.ws, {
             type: 'coaching',
             text: coaching.text,
-            audioBase64: coaching.audioBase64,
+            audioBase64: coaching.audioBase64 || '',
             trigger: coaching.trigger,
           });
+        } else {
+          console.warn(`[Voice] No coaching response for: "${sttResult.transcript}"`);
         }
       } else {
         console.warn(`[Voice] No coach engine for session: ${conn.sessionId}`);

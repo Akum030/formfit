@@ -42,6 +42,9 @@ interface SessionControlsProps {
   isAnalyzing: boolean;
   language: string;
   onLanguageToggle: () => void;
+  isResting?: boolean;
+  restTimeLeft?: number;
+  restDuration?: number;
 }
 
 const EXERCISE_ICONS: Record<string, string> = {
@@ -91,6 +94,9 @@ export function SessionControls({
   isAnalyzing,
   language,
   onLanguageToggle,
+  isResting = false,
+  restTimeLeft = 0,
+  restDuration = 30,
 }: SessionControlsProps) {
   return (
     <div className="flex flex-col h-full gap-3 p-3 overflow-y-auto">
@@ -121,6 +127,23 @@ export function SessionControls({
       {/* Active Session */}
       {isSessionActive && (
         <>
+          {/* Rest Timer Overlay */}
+          {isResting && (
+            <div className="glass-card p-6 border border-cyan-500/30 bg-gradient-to-b from-cyan-500/10 to-transparent text-center space-y-3 animate-fade-in-up">
+              <div className="text-cyan-400 text-xs font-bold uppercase tracking-wider">Rest Period</div>
+              <div className="text-5xl font-black text-white font-mono">{restTimeLeft}s</div>
+              <div className="h-2 bg-white/[0.06] rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 transition-all duration-1000"
+                  style={{ width: `${restDuration > 0 ? ((restDuration - restTimeLeft) / restDuration) * 100 : 0}%` }}
+                />
+              </div>
+              <div className="text-white/40 text-sm">
+                Set {setNumber} complete! Next set starting soon...
+              </div>
+            </div>
+          )}
+
           {/* Animated Score Gauge */}
           <ScoreGauge
             score={blendedScore}
