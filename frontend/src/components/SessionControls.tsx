@@ -8,6 +8,7 @@ import type {
   ExerciseSummary, FrameScore, RepScore, CoachingMessage, VoiceState, RepPhase,
 } from '../types';
 import type { GeminiAnalysis } from '../hooks/useGeminiAnalysis';
+import { PoseGuide } from './PoseGuide';
 
 interface SessionControlsProps {
   exercises: ExerciseSummary[];
@@ -46,12 +47,12 @@ interface SessionControlsProps {
 }
 
 const EXERCISE_ICONS: Record<string, string> = {
-  squat: 'SQ', pushup: 'PU', lunge: 'LN', jumping_jacks: 'JJ', high_knees: 'HK',
-  glute_bridge: 'GB', calf_raise: 'CR', tricep_dip: 'TD', wall_sit: 'WS',
-  sumo_squat: 'SS', standing_crunch: 'SC', leg_raise: 'LR',
-  bicep_curl: 'BC', shoulder_press: 'SP', lateral_raise: 'LT', front_raise: 'FR',
-  dumbbell_row: 'DR', hammer_curl: 'HC', deadlift: 'DL', goblet_squat: 'GS',
-  overhead_tricep: 'OT',
+  squat: '🦵', pushup: '💪', lunge: '🏃', jumping_jacks: '⭐', high_knees: '🦿',
+  glute_bridge: '🍑', calf_raise: '🦶', tricep_dip: '💎', wall_sit: '🧱',
+  sumo_squat: '🏋️', standing_crunch: '🔥', leg_raise: '🦵',
+  bicep_curl: '💪', shoulder_press: '🏋️', lateral_raise: '🤸', front_raise: '🙌',
+  dumbbell_row: '🚣', hammer_curl: '🔨', deadlift: '⚡', goblet_squat: '🏆',
+  overhead_tricep: '💎',
 };
 
 const PHASE_CONFIG: Record<RepPhase, { label: string; color: string; icon: string }> = {
@@ -97,7 +98,7 @@ export function SessionControls({
   restDuration = 30,
 }: SessionControlsProps) {
   return (
-    <div className="flex flex-col h-full gap-2 p-2 overflow-hidden">
+    <div className="flex flex-col h-full gap-2 p-2 overflow-y-auto">
       {/* Top Status Bar */}
       <StatusBar isModelLoading={isModelLoading} isModelReady={isModelReady} fps={fps} isAnalyzing={isAnalyzing} />
 
@@ -156,21 +157,25 @@ export function SessionControls({
             />
           </div>
 
+          {/* PoseGuide */}
+          {selectedExerciseId && <PoseGuide exerciseId={selectedExerciseId} phase={phase} />}
+
           {/* Form Issues — compact */}
           {frameScore && frameScore.issues.length > 0 && (
             <IssuesPanel issues={frameScore.issues} />
           )}
 
-          {/* Coach Chat Bubble — fills remaining space */}
-          <div className="flex-1 min-h-0">
-            <CoachBubble
-              lastCoaching={lastCoaching}
-              voiceState={voiceState}
-              isMuted={isMuted}
-              onToggleMute={onToggleMute}
-              lastTranscript={lastTranscript}
-            />
-          </div>
+          {/* AI Insights */}
+          {(aiAnalysis || aiTip) && <AIInsightsPanel analysis={aiAnalysis} tip={aiTip} />}
+
+          {/* Coach Chat Bubble */}
+          <CoachBubble
+            lastCoaching={lastCoaching}
+            voiceState={voiceState}
+            isMuted={isMuted}
+            onToggleMute={onToggleMute}
+            lastTranscript={lastTranscript}
+          />
 
           {/* Session Controls — always at bottom */}
           <div className="flex gap-2 flex-shrink-0">
@@ -487,7 +492,7 @@ function CoachBubble({ lastCoaching, voiceState, isMuted, onToggleMute, lastTran
   }, [lastCoaching?.text]);
 
   return (
-    <div className="glass-card p-2.5 space-y-1.5 flex flex-col h-full">
+    <div className="glass-card p-2.5 space-y-1.5 flex flex-col">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="relative">

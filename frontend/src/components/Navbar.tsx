@@ -5,9 +5,9 @@
 import { Link, useLocation } from 'react-router-dom';
 
 const NAV_LINKS = [
-  { path: '/', label: 'Home', icon: 'H' },
-  { path: '/workout', label: 'Workout', icon: 'W' },
-  { path: '/history', label: 'History', icon: 'S' },
+  { path: '/', label: 'Home' },
+  { path: '/workout', label: 'Workout' },
+  { path: '/history', label: 'History' },
 ];
 
 export function Navbar() {
@@ -44,7 +44,6 @@ export function Navbar() {
                 {isActive && (
                   <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400" />
                 )}
-                <span className="mr-1.5">{link.icon}</span>
                 {link.label}
               </Link>
             );

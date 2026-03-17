@@ -79,28 +79,28 @@ const FEATURES = [
 
 const EXERCISE_CARDS = [
   // Bodyweight / Home
-  { id: 'squat', name: 'Squat', abbr: 'SQ', gradient: 'from-blue-500 to-cyan-500', shadow: 'shadow-blue-500/20' },
-  { id: 'pushup', name: 'Push-up', abbr: 'PU', gradient: 'from-red-500 to-orange-500', shadow: 'shadow-red-500/20' },
-  { id: 'lunge', name: 'Lunge', abbr: 'LN', gradient: 'from-green-500 to-emerald-500', shadow: 'shadow-green-500/20' },
-  { id: 'jumping_jacks', name: 'Jumping Jacks', abbr: 'JJ', gradient: 'from-yellow-500 to-amber-500', shadow: 'shadow-yellow-500/20' },
-  { id: 'high_knees', name: 'High Knees', abbr: 'HK', gradient: 'from-orange-500 to-red-500', shadow: 'shadow-orange-500/20' },
-  { id: 'glute_bridge', name: 'Glute Bridge', abbr: 'GB', gradient: 'from-pink-500 to-rose-500', shadow: 'shadow-pink-500/20' },
-  { id: 'calf_raise', name: 'Calf Raise', abbr: 'CR', gradient: 'from-teal-500 to-cyan-500', shadow: 'shadow-teal-500/20' },
-  { id: 'tricep_dip', name: 'Tricep Dip', abbr: 'TD', gradient: 'from-indigo-500 to-blue-500', shadow: 'shadow-indigo-500/20' },
-  { id: 'wall_sit', name: 'Wall Sit', abbr: 'WS', gradient: 'from-stone-500 to-gray-500', shadow: 'shadow-stone-500/20' },
-  { id: 'sumo_squat', name: 'Sumo Squat', abbr: 'SS', gradient: 'from-purple-500 to-violet-500', shadow: 'shadow-purple-500/20' },
-  { id: 'standing_crunch', name: 'Standing Crunch', abbr: 'SC', gradient: 'from-lime-500 to-green-500', shadow: 'shadow-lime-500/20' },
-  { id: 'leg_raise', name: 'Leg Raise', abbr: 'LR', gradient: 'from-sky-500 to-blue-500', shadow: 'shadow-sky-500/20' },
+  { id: 'squat', name: 'Squat', icon: '🦵', gradient: 'from-blue-500 to-cyan-500', shadow: 'shadow-blue-500/20' },
+  { id: 'pushup', name: 'Push-up', icon: '💪', gradient: 'from-red-500 to-orange-500', shadow: 'shadow-red-500/20' },
+  { id: 'lunge', name: 'Lunge', icon: '🏃', gradient: 'from-green-500 to-emerald-500', shadow: 'shadow-green-500/20' },
+  { id: 'jumping_jacks', name: 'Jumping Jacks', icon: '⭐', gradient: 'from-yellow-500 to-amber-500', shadow: 'shadow-yellow-500/20' },
+  { id: 'high_knees', name: 'High Knees', icon: '🦿', gradient: 'from-orange-500 to-red-500', shadow: 'shadow-orange-500/20' },
+  { id: 'glute_bridge', name: 'Glute Bridge', icon: '🍑', gradient: 'from-pink-500 to-rose-500', shadow: 'shadow-pink-500/20' },
+  { id: 'calf_raise', name: 'Calf Raise', icon: '🦶', gradient: 'from-teal-500 to-cyan-500', shadow: 'shadow-teal-500/20' },
+  { id: 'tricep_dip', name: 'Tricep Dip', icon: '💎', gradient: 'from-indigo-500 to-blue-500', shadow: 'shadow-indigo-500/20' },
+  { id: 'wall_sit', name: 'Wall Sit', icon: '🧱', gradient: 'from-stone-500 to-gray-500', shadow: 'shadow-stone-500/20' },
+  { id: 'sumo_squat', name: 'Sumo Squat', icon: '🏋️', gradient: 'from-purple-500 to-violet-500', shadow: 'shadow-purple-500/20' },
+  { id: 'standing_crunch', name: 'Standing Crunch', icon: '🔥', gradient: 'from-lime-500 to-green-500', shadow: 'shadow-lime-500/20' },
+  { id: 'leg_raise', name: 'Leg Raise', icon: '🦵', gradient: 'from-sky-500 to-blue-500', shadow: 'shadow-sky-500/20' },
   // Dumbbell / Gym
-  { id: 'bicep_curl', name: 'Bicep Curl', abbr: 'BC', gradient: 'from-violet-500 to-purple-500', shadow: 'shadow-violet-500/20' },
-  { id: 'shoulder_press', name: 'Shoulder Press', abbr: 'SP', gradient: 'from-amber-500 to-yellow-500', shadow: 'shadow-amber-500/20' },
-  { id: 'lateral_raise', name: 'Lateral Raise', abbr: 'LT', gradient: 'from-fuchsia-500 to-pink-500', shadow: 'shadow-fuchsia-500/20' },
-  { id: 'front_raise', name: 'Front Raise', abbr: 'FR', gradient: 'from-rose-500 to-red-500', shadow: 'shadow-rose-500/20' },
-  { id: 'dumbbell_row', name: 'Dumbbell Row', abbr: 'DR', gradient: 'from-emerald-500 to-teal-500', shadow: 'shadow-emerald-500/20' },
-  { id: 'hammer_curl', name: 'Hammer Curl', abbr: 'HC', gradient: 'from-slate-500 to-zinc-500', shadow: 'shadow-slate-500/20' },
-  { id: 'deadlift', name: 'Deadlift', abbr: 'DL', gradient: 'from-red-600 to-orange-500', shadow: 'shadow-red-600/20' },
-  { id: 'goblet_squat', name: 'Goblet Squat', abbr: 'GS', gradient: 'from-cyan-500 to-blue-500', shadow: 'shadow-cyan-500/20' },
-  { id: 'overhead_tricep', name: 'Overhead Tricep', abbr: 'OT', gradient: 'from-violet-600 to-indigo-500', shadow: 'shadow-violet-600/20' },
+  { id: 'bicep_curl', name: 'Bicep Curl', icon: '💪', gradient: 'from-violet-500 to-purple-500', shadow: 'shadow-violet-500/20' },
+  { id: 'shoulder_press', name: 'Shoulder Press', icon: '🏋️', gradient: 'from-amber-500 to-yellow-500', shadow: 'shadow-amber-500/20' },
+  { id: 'lateral_raise', name: 'Lateral Raise', icon: '🤸', gradient: 'from-fuchsia-500 to-pink-500', shadow: 'shadow-fuchsia-500/20' },
+  { id: 'front_raise', name: 'Front Raise', icon: '🙌', gradient: 'from-rose-500 to-red-500', shadow: 'shadow-rose-500/20' },
+  { id: 'dumbbell_row', name: 'Dumbbell Row', icon: '🚣', gradient: 'from-emerald-500 to-teal-500', shadow: 'shadow-emerald-500/20' },
+  { id: 'hammer_curl', name: 'Hammer Curl', icon: '🔨', gradient: 'from-slate-500 to-zinc-500', shadow: 'shadow-slate-500/20' },
+  { id: 'deadlift', name: 'Deadlift', icon: '⚡', gradient: 'from-red-600 to-orange-500', shadow: 'shadow-red-600/20' },
+  { id: 'goblet_squat', name: 'Goblet Squat', icon: '🏆', gradient: 'from-cyan-500 to-blue-500', shadow: 'shadow-cyan-500/20' },
+  { id: 'overhead_tricep', name: 'Overhead Tricep', icon: '💎', gradient: 'from-violet-600 to-indigo-500', shadow: 'shadow-violet-600/20' },
 ];
 
 export function HomePage() {
@@ -313,7 +313,7 @@ export function HomePage() {
               <div
                 className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${ex.gradient} flex items-center justify-center mx-auto mb-3 shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}
               >
-                <span className="text-sm font-black text-white">{ex.abbr}</span>
+                <span className="text-2xl">{ex.icon}</span>
               </div>
               <div className="text-white font-bold text-sm">{ex.name}</div>
               <div className="text-white/20 text-xs mt-1">Start now →</div>
