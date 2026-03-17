@@ -113,7 +113,7 @@ export class CoachEngine {
   async checkFormCoaching(): Promise<CoachResponse | null> {
     const now = Date.now();
     if (now - this.lastFormCoachTime < MIN_FORM_INTERVAL_MS) return null;
-    if (this.userSpeechInProgress || now - this.lastUserSpeechTime < 10000) return null;
+    if (this.userSpeechInProgress || now - this.lastUserSpeechTime < 5000) return null;
     if (this.sessionState.currentScore >= 75) return null;
     if (this.sessionState.currentIssues.length === 0) return null;
 
@@ -181,7 +181,7 @@ export class CoachEngine {
   async checkMotivationCoaching(): Promise<CoachResponse | null> {
     const now = Date.now();
     if (now - this.lastMotivationTime < MIN_MOTIVATION_INTERVAL_MS) return null;
-    if (this.userSpeechInProgress || now - this.lastUserSpeechTime < 10000) return null;
+    if (this.userSpeechInProgress || now - this.lastUserSpeechTime < 5000) return null;
     this.lastMotivationTime = now;
     return this.generateCoaching('form');
   }
@@ -227,7 +227,17 @@ export class CoachEngine {
       return { text, audioBase64, trigger: 'user_speech' };
     } catch (err) {
       console.error('[CoachEngine] user speech coaching error:', err);
-      return null;
+      // Fallback response so user always gets an answer
+      const isHindi = this.sessionState.language.startsWith('hi');
+      const fallbackText = isHindi
+        ? `Main sun raha hoon! Aapka form ${this.sessionState.currentScore}% hai. Aur kuch puchna hai?`
+        : `I hear you! Your form score is ${this.sessionState.currentScore}%. What else would you like to know?`;
+      let audioBase64 = '';
+      try {
+        const tts = await textToSpeech(fallbackText, this.sessionState.language);
+        audioBase64 = tts.audioBase64;
+      } catch { /* TTS optional */ }
+      return { text: fallbackText, audioBase64, trigger: 'user_speech' };
     } finally {
       this.userSpeechInProgress = false;
     }

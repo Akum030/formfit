@@ -105,8 +105,8 @@ export function useFormScoring({
       const min = scores.length > 0 ? Math.min(...scores) : 0;
       const issues = [...new Set(issuesForRep.current)];
 
-      // Only count the rep if form quality is above minimum threshold (70%)
-      if (avg < 70) {
+      // Only count the rep if form quality is above minimum threshold (50%)
+      if (avg < 50) {
         // Bad form — reject the rep, reset phase but don't increment count
         phaseStateRef.current = { ...newState, repCount: prevState.repCount, wasAtBottom: false };
         frameScoresForRep.current = [];
