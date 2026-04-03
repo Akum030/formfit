@@ -27,6 +27,10 @@ export const CameraView = forwardRef<CameraViewRef, CameraViewProps>(
     const [cameraError, setCameraError] = useState<string | null>(null);
     const [isStarting, setIsStarting] = useState(true);
 
+    // Store callback in ref to avoid camera restart when parent re-creates the callback
+    const onVideoReadyRef = useRef(onVideoReady);
+    onVideoReadyRef.current = onVideoReady;
+
     useImperativeHandle(ref, () => ({
       getCanvas: () => canvasRef.current,
       getVideo: () => videoRef.current,
@@ -61,7 +65,7 @@ export const CameraView = forwardRef<CameraViewRef, CameraViewProps>(
             video.srcObject = stream;
             await video.play();
             setIsStarting(false);
-            onVideoReady(video);
+            onVideoReadyRef.current(video);
           }
         } catch (err) {
           if (!cancelled) {
@@ -84,7 +88,7 @@ export const CameraView = forwardRef<CameraViewRef, CameraViewProps>(
           stream.getTracks().forEach((t) => t.stop());
         }
       };
-    }, [width, height, onVideoReady]);
+    }, [width, height]);
 
     return (
       <div className="relative bg-black rounded-xl overflow-hidden" style={{ width, height }}>

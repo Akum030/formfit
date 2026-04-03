@@ -731,6 +731,354 @@ export const EXERCISES: ExerciseDefinition[] = [
       { joints: ['right_shoulder', 'right_hip', 'right_knee'], min: 155, max: 180, phase: 'top', weight: 0.2, issueText: 'Keep standing leg straight' },
     ],
   },
+
+  // ── REVERSE LUNGE ─────────────────────────────────────────
+  {
+    id: 'reverse_lunge',
+    name: 'Reverse Lunge',
+    category: 'Legs',
+    primaryJoints: ['left_hip', 'left_knee', 'left_ankle', 'right_hip', 'right_knee'],
+    phaseDetection: {
+      primaryAngle: ['left_hip', 'left_knee', 'left_ankle'],
+      bottomThreshold: 110,
+      topThreshold: 155,
+    },
+    pattern: 'lunge',
+    defaultSets: 3,
+    defaultReps: 10,
+    restSeconds: 60,
+    angleConstraints: [
+      { joints: ['left_hip', 'left_knee', 'left_ankle'], min: 75, max: 110, phase: 'bottom', weight: 0.3, issueText: 'Front knee at ~90° — step back further' },
+      { joints: ['left_shoulder', 'left_hip', 'left_knee'], min: 60, max: 130, phase: 'bottom', weight: 0.25, issueText: 'Keep torso upright — don\'t lean forward' },
+      { joints: ['right_hip', 'right_knee', 'right_ankle'], min: 70, max: 120, phase: 'bottom', weight: 0.2, issueText: 'Lower back knee closer to the floor' },
+      { joints: ['left_hip', 'left_knee', 'left_ankle'], min: 150, max: 180, phase: 'top', weight: 0.25, issueText: 'Stand up fully between reps' },
+    ],
+  },
+
+  // ── CURTSY LUNGE ──────────────────────────────────────────
+  {
+    id: 'curtsy_lunge',
+    name: 'Curtsy Lunge',
+    category: 'Legs',
+    primaryJoints: ['left_hip', 'left_knee', 'left_ankle', 'right_hip', 'right_knee'],
+    phaseDetection: {
+      primaryAngle: ['left_hip', 'left_knee', 'left_ankle'],
+      bottomThreshold: 110,
+      topThreshold: 155,
+    },
+    pattern: 'lunge',
+    defaultSets: 3,
+    defaultReps: 10,
+    restSeconds: 60,
+    angleConstraints: [
+      { joints: ['left_hip', 'left_knee', 'left_ankle'], min: 75, max: 115, phase: 'bottom', weight: 0.35, issueText: 'Front knee at ~90° — cross back leg behind' },
+      { joints: ['left_shoulder', 'left_hip', 'left_knee'], min: 60, max: 130, phase: 'bottom', weight: 0.25, issueText: 'Keep torso upright and core tight' },
+      { joints: ['left_hip', 'left_knee', 'left_ankle'], min: 150, max: 180, phase: 'top', weight: 0.2, issueText: 'Stand up fully between reps' },
+      { joints: ['right_hip', 'right_knee', 'right_ankle'], min: 150, max: 180, phase: 'top', weight: 0.2, issueText: 'Bring feet together at top' },
+    ],
+  },
+
+  // ── SIDE LUNGE ────────────────────────────────────────────
+  {
+    id: 'side_lunge',
+    name: 'Side Lunge',
+    category: 'Legs',
+    primaryJoints: ['left_hip', 'left_knee', 'left_ankle', 'right_hip', 'right_knee'],
+    phaseDetection: {
+      primaryAngle: ['left_hip', 'left_knee', 'left_ankle'],
+      bottomThreshold: 115,
+      topThreshold: 155,
+    },
+    pattern: 'lunge',
+    defaultSets: 3,
+    defaultReps: 10,
+    restSeconds: 60,
+    angleConstraints: [
+      { joints: ['left_hip', 'left_knee', 'left_ankle'], min: 70, max: 120, phase: 'bottom', weight: 0.35, issueText: 'Bend the lunging knee deeper — sit back into it' },
+      { joints: ['left_shoulder', 'left_hip', 'left_knee'], min: 55, max: 130, phase: 'bottom', weight: 0.25, issueText: 'Keep chest up and torso upright' },
+      { joints: ['left_hip', 'left_knee', 'left_ankle'], min: 150, max: 180, phase: 'top', weight: 0.2, issueText: 'Stand up fully between reps' },
+      { joints: ['right_hip', 'right_knee', 'right_ankle'], min: 155, max: 180, phase: 'top', weight: 0.2, issueText: 'Keep the straight leg extended' },
+    ],
+  },
+
+  // ── BULGARIAN SPLIT SQUAT ─────────────────────────────────
+  {
+    id: 'bulgarian_split_squat',
+    name: 'Bulgarian Split Squat',
+    category: 'Legs',
+    primaryJoints: ['left_hip', 'left_knee', 'left_ankle', 'right_hip', 'right_knee'],
+    phaseDetection: {
+      primaryAngle: ['left_hip', 'left_knee', 'left_ankle'],
+      bottomThreshold: 110,
+      topThreshold: 155,
+    },
+    pattern: 'squat',
+    defaultSets: 3,
+    defaultReps: 10,
+    restSeconds: 60,
+    angleConstraints: [
+      { joints: ['left_hip', 'left_knee', 'left_ankle'], min: 70, max: 115, phase: 'bottom', weight: 0.35, issueText: 'Lower deeper — front thigh parallel to floor' },
+      { joints: ['left_shoulder', 'left_hip', 'left_knee'], min: 60, max: 130, phase: 'bottom', weight: 0.25, issueText: 'Keep torso upright' },
+      { joints: ['left_hip', 'left_knee', 'left_ankle'], min: 150, max: 180, phase: 'top', weight: 0.2, issueText: 'Stand up fully — drive through front heel' },
+      { joints: ['right_hip', 'right_knee', 'right_ankle'], min: 40, max: 130, phase: 'bottom', weight: 0.2, issueText: 'Back knee should lower towards floor' },
+    ],
+  },
+
+  // ── PIKE PUSH-UP ──────────────────────────────────────────
+  {
+    id: 'pike_pushup',
+    name: 'Pike Push-up',
+    category: 'Shoulders',
+    primaryJoints: ['left_shoulder', 'left_elbow', 'left_wrist', 'left_hip'],
+    phaseDetection: {
+      primaryAngle: ['left_shoulder', 'left_elbow', 'left_wrist'],
+      bottomThreshold: 100,
+      topThreshold: 150,
+    },
+    pattern: 'vertical_push',
+    defaultSets: 3,
+    defaultReps: 8,
+    restSeconds: 60,
+    angleConstraints: [
+      { joints: ['left_shoulder', 'left_elbow', 'left_wrist'], min: 60, max: 110, phase: 'bottom', weight: 0.3, issueText: 'Lower head towards floor — bend elbows more' },
+      { joints: ['right_shoulder', 'right_elbow', 'right_wrist'], min: 60, max: 110, phase: 'bottom', weight: 0.3, issueText: 'Lower head towards floor — bend elbows more' },
+      { joints: ['left_shoulder', 'left_elbow', 'left_wrist'], min: 145, max: 180, phase: 'top', weight: 0.2, issueText: 'Extend arms fully at the top' },
+      { joints: ['right_shoulder', 'right_elbow', 'right_wrist'], min: 145, max: 180, phase: 'top', weight: 0.2, issueText: 'Extend arms fully at the top' },
+    ],
+  },
+
+  // ── DIAMOND PUSH-UP ───────────────────────────────────────
+  {
+    id: 'diamond_pushup',
+    name: 'Diamond Push-up',
+    category: 'Arms',
+    primaryJoints: ['left_shoulder', 'left_elbow', 'left_wrist', 'right_shoulder', 'right_elbow', 'right_wrist'],
+    phaseDetection: {
+      primaryAngle: ['left_shoulder', 'left_elbow', 'left_wrist'],
+      bottomThreshold: 100,
+      topThreshold: 145,
+    },
+    pattern: 'horizontal_push',
+    defaultSets: 3,
+    defaultReps: 8,
+    restSeconds: 60,
+    angleConstraints: [
+      { joints: ['left_shoulder', 'left_elbow', 'left_wrist'], min: 50, max: 110, phase: 'bottom', weight: 0.25, issueText: 'Lower chest closer to hands' },
+      { joints: ['right_shoulder', 'right_elbow', 'right_wrist'], min: 50, max: 110, phase: 'bottom', weight: 0.25, issueText: 'Lower chest closer to hands' },
+      { joints: ['left_shoulder', 'left_hip', 'left_ankle'], min: 130, max: 180, phase: 'bottom', weight: 0.15, issueText: 'Keep body in a straight line' },
+      { joints: ['left_shoulder', 'left_elbow', 'left_wrist'], min: 140, max: 180, phase: 'top', weight: 0.2, issueText: 'Extend arms fully at the top' },
+      { joints: ['right_shoulder', 'right_elbow', 'right_wrist'], min: 140, max: 180, phase: 'top', weight: 0.15, issueText: 'Extend arms fully at the top' },
+    ],
+  },
+
+  // ── WIDE PUSH-UP ──────────────────────────────────────────
+  {
+    id: 'wide_pushup',
+    name: 'Wide Push-up',
+    category: 'Chest',
+    primaryJoints: ['left_shoulder', 'left_elbow', 'left_wrist', 'right_shoulder', 'right_elbow', 'right_wrist'],
+    phaseDetection: {
+      primaryAngle: ['left_shoulder', 'left_elbow', 'left_wrist'],
+      bottomThreshold: 100,
+      topThreshold: 145,
+    },
+    pattern: 'horizontal_push',
+    defaultSets: 3,
+    defaultReps: 10,
+    restSeconds: 60,
+    angleConstraints: [
+      { joints: ['left_shoulder', 'left_elbow', 'left_wrist'], min: 50, max: 110, phase: 'bottom', weight: 0.25, issueText: 'Lower chest towards floor' },
+      { joints: ['right_shoulder', 'right_elbow', 'right_wrist'], min: 50, max: 110, phase: 'bottom', weight: 0.25, issueText: 'Lower chest towards floor' },
+      { joints: ['left_shoulder', 'left_hip', 'left_ankle'], min: 130, max: 180, phase: 'bottom', weight: 0.15, issueText: 'Keep body straight — no sagging hips' },
+      { joints: ['left_shoulder', 'left_elbow', 'left_wrist'], min: 135, max: 180, phase: 'top', weight: 0.2, issueText: 'Extend arms fully at the top' },
+      { joints: ['right_shoulder', 'right_elbow', 'right_wrist'], min: 135, max: 180, phase: 'top', weight: 0.15, issueText: 'Extend arms fully at the top' },
+    ],
+  },
+
+  // ── HIP THRUST ────────────────────────────────────────────
+  {
+    id: 'hip_thrust',
+    name: 'Hip Thrust',
+    category: 'Glutes',
+    primaryJoints: ['left_shoulder', 'left_hip', 'left_knee', 'right_hip', 'right_knee'],
+    phaseDetection: {
+      primaryAngle: ['left_shoulder', 'left_hip', 'left_knee'],
+      bottomThreshold: 100,
+      topThreshold: 155,
+    },
+    pattern: 'glute_bridge',
+    defaultSets: 3,
+    defaultReps: 12,
+    restSeconds: 60,
+    angleConstraints: [
+      { joints: ['left_shoulder', 'left_hip', 'left_knee'], min: 150, max: 180, phase: 'top', weight: 0.3, issueText: 'Drive hips up higher — full extension at top' },
+      { joints: ['right_shoulder', 'right_hip', 'right_knee'], min: 150, max: 180, phase: 'top', weight: 0.3, issueText: 'Drive hips up higher — full extension at top' },
+      { joints: ['left_hip', 'left_knee', 'left_ankle'], min: 70, max: 110, phase: 'bottom', weight: 0.2, issueText: 'Keep knees at ~90° — feet flat on floor' },
+      { joints: ['right_hip', 'right_knee', 'right_ankle'], min: 70, max: 110, phase: 'bottom', weight: 0.2, issueText: 'Keep knees at ~90° — feet flat on floor' },
+    ],
+  },
+
+  // ── ARNOLD PRESS ──────────────────────────────────────────
+  {
+    id: 'arnold_press',
+    name: 'Arnold Press',
+    category: 'Shoulders',
+    primaryJoints: ['left_shoulder', 'left_elbow', 'left_wrist', 'right_shoulder', 'right_elbow'],
+    phaseDetection: {
+      primaryAngle: ['left_shoulder', 'left_elbow', 'left_wrist'],
+      bottomThreshold: 100,
+      topThreshold: 155,
+    },
+    pattern: 'vertical_push',
+    defaultSets: 3,
+    defaultReps: 10,
+    restSeconds: 60,
+    angleConstraints: [
+      { joints: ['left_shoulder', 'left_elbow', 'left_wrist'], min: 60, max: 110, phase: 'bottom', weight: 0.25, issueText: 'Start with elbows in front — palms facing you' },
+      { joints: ['right_shoulder', 'right_elbow', 'right_wrist'], min: 60, max: 110, phase: 'bottom', weight: 0.25, issueText: 'Start with elbows in front — palms facing you' },
+      { joints: ['left_shoulder', 'left_elbow', 'left_wrist'], min: 155, max: 180, phase: 'top', weight: 0.25, issueText: 'Press all the way up — rotate palms outward' },
+      { joints: ['right_shoulder', 'right_elbow', 'right_wrist'], min: 155, max: 180, phase: 'top', weight: 0.25, issueText: 'Press all the way up — rotate palms outward' },
+    ],
+  },
+
+  // ── BENT OVER ROW ─────────────────────────────────────────
+  {
+    id: 'bent_over_row',
+    name: 'Bent Over Row',
+    category: 'Back',
+    primaryJoints: ['left_shoulder', 'left_elbow', 'left_wrist', 'left_hip', 'left_knee'],
+    phaseDetection: {
+      primaryAngle: ['left_shoulder', 'left_elbow', 'left_wrist'],
+      bottomThreshold: 80,
+      topThreshold: 130,
+    },
+    pattern: 'row',
+    defaultSets: 3,
+    defaultReps: 12,
+    restSeconds: 60,
+    angleConstraints: [
+      { joints: ['left_shoulder', 'left_elbow', 'left_wrist'], min: 40, max: 90, phase: 'bottom', weight: 0.25, issueText: 'Pull elbows back — squeeze shoulder blades together' },
+      { joints: ['right_shoulder', 'right_elbow', 'right_wrist'], min: 40, max: 90, phase: 'bottom', weight: 0.25, issueText: 'Pull elbows back — squeeze shoulder blades together' },
+      { joints: ['left_shoulder', 'left_hip', 'left_knee'], min: 60, max: 120, phase: 'bottom', weight: 0.2, issueText: 'Keep back flat — hinge at hips about 45°' },
+      { joints: ['left_shoulder', 'left_elbow', 'left_wrist'], min: 120, max: 180, phase: 'top', weight: 0.15, issueText: 'Extend arms fully at bottom of movement' },
+      { joints: ['right_shoulder', 'right_elbow', 'right_wrist'], min: 120, max: 180, phase: 'top', weight: 0.15, issueText: 'Extend arms fully at bottom of movement' },
+    ],
+  },
+
+  // ── GOOD MORNING ──────────────────────────────────────────
+  {
+    id: 'good_morning',
+    name: 'Good Morning',
+    category: 'Back',
+    primaryJoints: ['left_shoulder', 'left_hip', 'left_knee', 'left_ankle'],
+    phaseDetection: {
+      primaryAngle: ['left_shoulder', 'left_hip', 'left_knee'],
+      bottomThreshold: 100,
+      topThreshold: 155,
+    },
+    pattern: 'hip_hinge',
+    defaultSets: 3,
+    defaultReps: 12,
+    restSeconds: 60,
+    angleConstraints: [
+      { joints: ['left_shoulder', 'left_hip', 'left_knee'], min: 55, max: 110, phase: 'bottom', weight: 0.35, issueText: 'Hinge deeper at hips — keep back flat' },
+      { joints: ['left_hip', 'left_knee', 'left_ankle'], min: 150, max: 180, phase: 'bottom', weight: 0.25, issueText: 'Keep legs straight — only slight knee bend' },
+      { joints: ['left_shoulder', 'left_hip', 'left_knee'], min: 155, max: 180, phase: 'top', weight: 0.2, issueText: 'Stand up fully — squeeze glutes at top' },
+      { joints: ['right_shoulder', 'right_hip', 'right_knee'], min: 155, max: 180, phase: 'top', weight: 0.2, issueText: 'Stand up fully' },
+    ],
+  },
+
+  // ── ROMANIAN DEADLIFT ─────────────────────────────────────
+  {
+    id: 'romanian_deadlift',
+    name: 'Romanian Deadlift',
+    category: 'Legs',
+    primaryJoints: ['left_shoulder', 'left_hip', 'left_knee', 'left_ankle'],
+    phaseDetection: {
+      primaryAngle: ['left_shoulder', 'left_hip', 'left_knee'],
+      bottomThreshold: 100,
+      topThreshold: 155,
+    },
+    pattern: 'hip_hinge',
+    defaultSets: 3,
+    defaultReps: 10,
+    restSeconds: 90,
+    angleConstraints: [
+      { joints: ['left_shoulder', 'left_hip', 'left_knee'], min: 55, max: 110, phase: 'bottom', weight: 0.35, issueText: 'Hinge at hips — push butt back, keep back flat' },
+      { joints: ['left_hip', 'left_knee', 'left_ankle'], min: 145, max: 180, phase: 'bottom', weight: 0.25, issueText: 'Keep legs nearly straight — slight knee bend only' },
+      { joints: ['left_shoulder', 'left_hip', 'left_knee'], min: 155, max: 180, phase: 'top', weight: 0.2, issueText: 'Stand up fully — squeeze glutes at top' },
+      { joints: ['right_shoulder', 'right_hip', 'right_knee'], min: 155, max: 180, phase: 'top', weight: 0.2, issueText: 'Stand up fully' },
+    ],
+  },
+
+  // ── STEP-UP ───────────────────────────────────────────────
+  {
+    id: 'step_up',
+    name: 'Step-up',
+    category: 'Legs',
+    primaryJoints: ['left_hip', 'left_knee', 'left_ankle', 'right_hip', 'right_knee'],
+    phaseDetection: {
+      primaryAngle: ['left_hip', 'left_knee', 'left_ankle'],
+      bottomThreshold: 110,
+      topThreshold: 160,
+    },
+    pattern: 'squat',
+    defaultSets: 3,
+    defaultReps: 10,
+    restSeconds: 60,
+    angleConstraints: [
+      { joints: ['left_hip', 'left_knee', 'left_ankle'], min: 70, max: 115, phase: 'bottom', weight: 0.3, issueText: 'Place foot firmly on step — knee at ~90°' },
+      { joints: ['left_shoulder', 'left_hip', 'left_knee'], min: 60, max: 130, phase: 'bottom', weight: 0.2, issueText: 'Keep torso upright — don\'t lean forward' },
+      { joints: ['left_hip', 'left_knee', 'left_ankle'], min: 155, max: 180, phase: 'top', weight: 0.25, issueText: 'Stand fully on the step — lock out at top' },
+      { joints: ['right_hip', 'right_knee', 'right_ankle'], min: 155, max: 180, phase: 'top', weight: 0.25, issueText: 'Bring trailing leg up to the step' },
+    ],
+  },
+
+  // ── MOUNTAIN CLIMBER ──────────────────────────────────────
+  {
+    id: 'mountain_climber',
+    name: 'Mountain Climber',
+    category: 'Cardio',
+    primaryJoints: ['left_hip', 'left_knee', 'right_hip', 'right_knee', 'left_shoulder'],
+    phaseDetection: {
+      primaryAngle: ['left_shoulder', 'left_hip', 'left_knee'],
+      bottomThreshold: 100,
+      topThreshold: 150,
+    },
+    pattern: 'jumping',
+    defaultSets: 3,
+    defaultReps: 20,
+    restSeconds: 30,
+    angleConstraints: [
+      { joints: ['left_shoulder', 'left_hip', 'left_knee'], min: 55, max: 110, phase: 'bottom', weight: 0.3, issueText: 'Drive knee closer to chest' },
+      { joints: ['right_shoulder', 'right_hip', 'right_knee'], min: 55, max: 110, phase: 'bottom', weight: 0.3, issueText: 'Drive knee closer to chest' },
+      { joints: ['left_shoulder', 'left_hip', 'left_knee'], min: 140, max: 180, phase: 'top', weight: 0.2, issueText: 'Extend leg back fully' },
+      { joints: ['right_shoulder', 'right_hip', 'right_knee'], min: 140, max: 180, phase: 'top', weight: 0.2, issueText: 'Extend leg back fully' },
+    ],
+  },
+
+  // ── PLANK HOLD (Isometric) ────────────────────────────────
+  {
+    id: 'plank_hold',
+    name: 'Plank Hold',
+    category: 'Core',
+    primaryJoints: ['left_shoulder', 'left_hip', 'left_ankle', 'right_shoulder', 'right_hip'],
+    phaseDetection: {
+      primaryAngle: ['left_shoulder', 'left_hip', 'left_ankle'],
+      bottomThreshold: 140,
+      topThreshold: 170,
+    },
+    pattern: 'plank_hold',
+    defaultSets: 3,
+    defaultReps: 1,
+    restSeconds: 60,
+    angleConstraints: [
+      { joints: ['left_shoulder', 'left_hip', 'left_ankle'], min: 150, max: 180, phase: 'bottom', weight: 0.3, issueText: 'Keep body in a straight line — don\'t let hips sag' },
+      { joints: ['right_shoulder', 'right_hip', 'right_ankle'], min: 150, max: 180, phase: 'bottom', weight: 0.3, issueText: 'Keep body in a straight line — don\'t let hips sag' },
+      { joints: ['left_shoulder', 'left_elbow', 'left_wrist'], min: 70, max: 120, phase: 'bottom', weight: 0.2, issueText: 'Keep elbows under shoulders' },
+      { joints: ['right_shoulder', 'right_elbow', 'right_wrist'], min: 70, max: 120, phase: 'bottom', weight: 0.2, issueText: 'Keep elbows under shoulders' },
+    ],
+  },
 ];
 
 export function getExerciseById(id: string): ExerciseDefinition | undefined {

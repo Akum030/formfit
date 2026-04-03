@@ -1,14 +1,16 @@
 /**
  * SessionControls — Hackathon-grade UI with animated circular score gauge,
  * AI insights panel, exercise cards, coaching chat, and rep animations.
+ *
+ * Wrapped with React.memo to prevent re-renders from parent state changes
+ * (e.g. keypoints updating at 4/sec) that don't affect this component.
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, memo } from 'react';
 import type {
   ExerciseSummary, FrameScore, RepScore, CoachingMessage, VoiceState, RepPhase,
 } from '../types';
 import type { GeminiAnalysis } from '../hooks/useGeminiAnalysis';
-import { PoseGuide } from './PoseGuide';
 
 interface SessionControlsProps {
   exercises: ExerciseSummary[];
@@ -62,7 +64,7 @@ const PHASE_CONFIG: Record<RepPhase, { label: string; color: string; icon: strin
   concentric: { label: 'Coming Up', color: '#22c55e', icon: '\u25B2' },
 };
 
-export function SessionControls({
+export const SessionControls = memo(function SessionControls({
   exercises,
   selectedExerciseId,
   onSelectExercise,
@@ -157,9 +159,6 @@ export function SessionControls({
             />
           </div>
 
-          {/* PoseGuide */}
-          {selectedExerciseId && <PoseGuide exerciseId={selectedExerciseId} phase={phase} />}
-
           {/* Form Issues — compact */}
           {frameScore && frameScore.issues.length > 0 && (
             <IssuesPanel issues={frameScore.issues} />
@@ -196,7 +195,7 @@ export function SessionControls({
       )}
     </div>
   );
-}
+});
 
 // ── Status Bar ──────────────────────────────────────
 
@@ -236,7 +235,7 @@ function ExerciseSelector({ exercises, selectedId, onSelect, onStart, isModelRea
         </div>
         <div>
           <h3 className="text-white font-bold text-sm">Choose Exercise</h3>
-          <p className="text-white/40 text-xs">Select from 22 exercises below</p>
+          <p className="text-white/40 text-xs">Select from {exercises.length} exercises below</p>
         </div>
       </div>
 
@@ -358,21 +357,6 @@ function ScoreGauge({ score, localScore, aiScore, phase }: {
   );
 }
 
-function ScoreBar({ label, value, color }: { label: string; value: number; color: string }) {
-  return (
-    <div className="flex items-center gap-2">
-      <span className="text-[10px] text-white/40 w-8 font-medium">{label}</span>
-      <div className="flex-1 h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
-        <div
-          className="h-full rounded-full transition-all duration-300"
-          style={{ width: `${value}%`, backgroundColor: color }}
-        />
-      </div>
-      <span className="text-[10px] font-mono font-bold w-7 text-right" style={{ color }}>{value}</span>
-    </div>
-  );
-}
-
 // ── Rep & Set Counter ───────────────────────────────
 
 function RepSetCounter({ repCount, targetReps, setNumber, targetSets, repScores }: {
@@ -432,7 +416,7 @@ function AIInsightsPanel({ analysis, tip }: { analysis: GeminiAnalysis | null; t
         <div className="w-5 h-5 rounded-md bg-gradient-to-br from-violet-500/30 to-fuchsia-500/30 flex items-center justify-center">
           <span className="text-[8px] font-black text-violet-400">AI</span>
         </div>
-        <span className="text-violet-300 text-xs font-bold uppercase tracking-wider">Gemini AI Insight</span>
+        <span className="text-violet-300 text-xs font-bold uppercase tracking-wider">AI Insight</span>
       </div>
 
       {tip && (
@@ -492,8 +476,8 @@ function CoachBubble({ lastCoaching, voiceState, isMuted, onToggleMute, lastTran
   }, [lastCoaching?.text]);
 
   return (
-    <div className="glass-card p-2.5 space-y-1.5 flex flex-col">
-      <div className="flex items-center justify-between">
+    <div className="glass-card p-2.5 space-y-1.5 flex flex-col min-h-[120px] max-h-[160px]">
+      <div className="flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-2">
           <div className="relative">
             <div className="w-7 h-7 rounded-full bg-gradient-to-br from-cyan-500 to-emerald-500 flex items-center justify-center">
@@ -528,13 +512,18 @@ function CoachBubble({ lastCoaching, voiceState, isMuted, onToggleMute, lastTran
       </div>
 
       {displayText && (
-        <div className="bg-white/[0.03] rounded-xl p-2.5 border border-white/[0.06] flex-1 min-h-0 overflow-y-auto">
+        <div className="bg-white/[0.03] rounded-xl p-2.5 border border-white/[0.06] flex-1 min-h-[48px] max-h-[72px] overflow-y-auto">
           <p className="text-white/80 text-sm leading-relaxed italic">
             &ldquo;{displayText}&rdquo;
             {displayText.length < (targetText.current?.length ?? 0) && (
               <span className="typing-cursor">|</span>
             )}
           </p>
+        </div>
+      )}
+      {!displayText && (
+        <div className="bg-white/[0.03] rounded-xl p-2.5 border border-white/[0.06] flex-1 min-h-[48px] max-h-[72px] flex items-center justify-center">
+          <p className="text-white/20 text-xs italic">Coach will speak here...</p>
         </div>
       )}
 
@@ -589,18 +578,22 @@ function VoiceIndicator({ state }: { state: VoiceState }) {
 function useAnimatedValue(target: number, duration = 200): number {
   const [value, setValue] = useState(target);
   const animationRef = useRef<number | null>(null);
+  // Track the last displayed value via ref to avoid stale closure in animation
+  const currentRef = useRef(target);
 
   useEffect(() => {
     if (animationRef.current) cancelAnimationFrame(animationRef.current);
 
-    const start = value;
+    const start = currentRef.current;
     const startTime = performance.now();
 
     const animate = (now: number) => {
       const elapsed = now - startTime;
       const progress = Math.min(1, elapsed / duration);
       const eased = 1 - Math.pow(1 - progress, 3);
-      setValue(start + (target - start) * eased);
+      const next = start + (target - start) * eased;
+      currentRef.current = next;
+      setValue(next);
 
       if (progress < 1) {
         animationRef.current = requestAnimationFrame(animate);

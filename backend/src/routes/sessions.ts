@@ -32,13 +32,23 @@ sessionsRouter.post('/sessions', async (req: Request, res: Response) => {
       return;
     }
 
+    // Validate userId exists in DB if provided — prevents FK constraint error
+    let validUserId: string | undefined;
+    if (userId) {
+      const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+      if (user) {
+        validUserId = userId;
+      }
+      // Silently ignore invalid userId — session proceeds without user link
+    }
+
     const session = await prisma.session.create({
       data: {
         exerciseId,
         status: 'active',
         totalSets: exercise.defaultSets,
         targetReps: exercise.defaultReps,
-        ...(userId ? { userId } : {}),
+        ...(validUserId ? { userId: validUserId } : {}),
       },
     });
 
@@ -93,9 +103,9 @@ sessionsRouter.patch('/sessions/:id/end', async (req: Request<{id: string}>, res
       data: {
         status: 'completed',
         endedAt: new Date(),
-        avgFormScore: avgFormScore ?? null,
-        totalReps: totalReps ?? null,
-        aiSummary: aiSummary ?? null,
+        ...(avgFormScore !== undefined && { avgFormScore }),
+        ...(totalReps !== undefined && { totalReps }),
+        ...(aiSummary !== undefined && { aiSummary }),
       },
     });
 

@@ -12,7 +12,9 @@ import { WebSocketServer } from 'ws';
 
 import { prisma } from './models/index';
 import { sessionsRouter } from './routes/sessions';
-import { eventsRouter, registerCoachEngine, unregisterCoachEngine } from './routes/events';
+import { eventsRouter, registerCoachEngine, unregisterCoachEngine, getCoachEngine } from './routes/events';
+import { foodRouter } from './routes/food';
+import { dietRouter } from './routes/diet';
 import { handleVoiceConnection } from './routes/voice';
 import { CoachEngine } from './services/coachEngine';
 import { getExerciseById } from './logic/exerciseDefinitions';
@@ -23,16 +25,32 @@ const app = express();
 
 // ── Middleware ─────────────────────────────────────────────
 app.use(cors({ origin: true, credentials: true }));
-app.use(express.json({ limit: '2mb' }));
+app.use(express.json({ limit: '10mb' }));
 
 // ── Health check ──────────────────────────────────────────
+// Core features (pose detection, food analysis, diet planning, coaching) work
+// fully offline. AI APIs are optional enhancements.
 app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', service: 'ai-gym-trainer', timestamp: new Date().toISOString() });
+  res.json({
+    status: 'ok',
+    service: 'ai-gym-trainer',
+    timestamp: new Date().toISOString(),
+    mode: 'offline-capable',
+    features: {
+      poseDetection: 'local (MoveNet)',
+      foodAnalysis: 'local (Indian food database)',
+      dietPlanning: 'local (BMR/TDEE algorithm)',
+      voiceCoaching: 'browser (Web Speech API)',
+      coachingText: 'local (template-based with optional AI enhancement)',
+    },
+  });
 });
 
 // ── API Routes ────────────────────────────────────────────
 app.use('/api', sessionsRouter);
 app.use('/api', eventsRouter);
+app.use('/api', foodRouter);
+app.use('/api', dietRouter);
 
 // ── Start coaching for a session ──────────────────────────
 app.post('/api/coaching/start', async (req, res) => {
@@ -90,12 +108,55 @@ app.post('/api/coaching/start', async (req, res) => {
 app.post('/api/coaching/stop', async (req, res) => {
   try {
     const { sessionId, totalReps, avgFormScore } = req.body;
-    const engine = unregisterCoachEngine(sessionId);
+    unregisterCoachEngine(sessionId);
 
     res.json({ stopped: true });
   } catch (err) {
     console.error('[Server] coaching stop error:', err);
     res.status(500).json({ error: 'Failed to stop coaching' });
+  }
+});
+
+// ── Respond to user speech (REST alternative to voice WebSocket) ──
+// Called by frontend when browser SpeechRecognition captures user text
+app.post('/api/coaching/respond', async (req, res) => {
+  try {
+    const { sessionId, userText, language } = req.body;
+
+    if (!sessionId || !userText) {
+      res.status(400).json({ error: 'sessionId and userText are required' });
+      return;
+    }
+
+    const engine = getCoachEngine(sessionId);
+    if (!engine) {
+      // No active coaching session — return a generic encouragement
+      res.json({
+        text: language?.startsWith('hi') ? 'बहुत अच्छे! मेहनत जारी रखो!' : 'Great job! Keep going!',
+        trigger: 'user_speech',
+      });
+      return;
+    }
+
+    const result = await engine.handleUserSpeech(userText);
+    if (result) {
+      res.json({
+        text: result.text,
+        trigger: result.trigger || 'user_speech',
+      });
+    } else {
+      res.json({
+        text: language?.startsWith('hi') ? 'बहुत अच्छे! मेहनत जारी रखो!' : 'Keep going! You are doing great!',
+        trigger: 'user_speech',
+      });
+    }
+  } catch (err) {
+    console.error('[Server] coaching respond error:', err);
+    // Never 500 — return a fallback text response
+    res.json({
+      text: 'Keep pushing! You are doing great!',
+      trigger: 'user_speech',
+    });
   }
 });
 
@@ -124,6 +185,20 @@ async function main() {
   } catch (err) {
     console.error('[DB] Connection error:', err);
     console.log('[DB] Running without database — some features may be unavailable');
+  }
+
+  // API key info — optional enhancements
+  const geminiKey = process.env.GEMINI_API_KEY || '';
+  const sarvamKey = process.env.SARVAM_API_KEY || '';
+  const isPlaceholder = (key: string) =>
+    !key || key.includes('your-') || key.includes('placeholder') || key.length < 10;
+
+  console.log('  📦 Core features work 100% offline (no API keys required)');
+  if (!isPlaceholder(geminiKey)) {
+    console.log('  ✅ Gemini API key configured — AI coaching enhancement active');
+  }
+  if (!isPlaceholder(sarvamKey)) {
+    console.log('  ✅ Sarvam API key configured — server-side TTS/STT active');
   }
 
   server.listen(PORT, () => {

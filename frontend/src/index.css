@@ -2,7 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
-* {
+/* Hide scrollbar for horizontal-scroll nav on mobile */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+*  {
   margin: 0;
   padding: 0;
   box-sizing: border-box;

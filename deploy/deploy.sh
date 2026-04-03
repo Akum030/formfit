@@ -13,10 +13,9 @@ echo "🚀 Deploying RepSensei to $DOMAIN..."
 cd "$PROJECT_DIR"
 git pull origin main
 
-# 2. Check required env vars
+# 2. Check optional env vars (core features work without any API keys)
 if [ -z "$GEMINI_API_KEY" ]; then
-  echo "ERROR: GEMINI_API_KEY is not set. Add it to your environment or .env file."
-  exit 1
+  echo "⚠️  GEMINI_API_KEY not set — coaching will use template fallbacks (still works great!)"
 fi
 
 # 3. Build and start containers

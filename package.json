@@ -4,7 +4,8 @@
   "description": "Real-time AI-powered gym coach using **MoveNet** pose detection, **Gemini** coaching intelligence, and **Sarvam AI** continuous duplex voice.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "playwright test",
+    "test:headed": "playwright test --headed"
   },
   "keywords": [],
   "author": "",

@@ -19,6 +19,7 @@ interface UseFormScoringOptions {
   keypoints: Keypoint[];
   sessionId: string | null;
   isActive: boolean;
+  onCoachingText?: (text: string) => void; // Called when backend returns coaching text from pose/rep events
 }
 
 interface UseFormScoringResult {
@@ -39,6 +40,7 @@ export function useFormScoring({
   keypoints,
   sessionId,
   isActive,
+  onCoachingText,
 }: UseFormScoringOptions): UseFormScoringResult {
   const [frameScore, setFrameScore] = useState<FrameScore | null>(null);
   const [repScores, setRepScores] = useState<RepScore[]>([]);
@@ -54,6 +56,8 @@ export function useFormScoring({
   const frameScoresForRep = useRef<number[]>([]);
   const issuesForRep = useRef<string[]>([]);
   const lastEventTime = useRef(0);
+  const onCoachingTextRef = useRef(onCoachingText);
+  onCoachingTextRef.current = onCoachingText;
 
   // Reset when exercise changes
   useEffect(() => {
@@ -127,15 +131,15 @@ export function useFormScoring({
 
       // Notify backend
       if (sessionId) {
-        sendRepEvent(sessionId, newState.repCount, avg);
+        sendRepEvent(sessionId, newState.repCount, avg, onCoachingTextRef.current);
       }
     }
 
-    // Send pose event to backend periodically (every 2 seconds)
+    // Send pose event to backend periodically (every 3 seconds to reduce load)
     const now = Date.now();
-    if (sessionId && now - lastEventTime.current > 2000) {
+    if (sessionId && now - lastEventTime.current > 3000) {
       lastEventTime.current = now;
-      sendPoseEvent(sessionId, fs.scorePercent, fs.issues);
+      sendPoseEvent(sessionId, fs.scorePercent, fs.issues, onCoachingTextRef.current);
     }
   }, [exercise, keypoints, isActive, sessionId]);
 
@@ -387,25 +391,37 @@ function selectBestSideConstraints(
   return result;
 }
 
-async function sendPoseEvent(sessionId: string, score: number, issues: string[]) {
+async function sendPoseEvent(sessionId: string, score: number, issues: string[], onCoachingCb?: (text: string) => void) {
+  // Skip network calls for local/offline sessions
+  if (sessionId.startsWith('local-')) return;
   try {
-    await fetch(`${API_BASE}/api/events/pose`, {
+    const resp = await fetch(`${API_BASE}/api/events/pose`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sessionId, score, issues }),
     });
+    if (resp.ok && onCoachingCb) {
+      const data = await resp.json();
+      if (data.coaching?.text) onCoachingCb(data.coaching.text);
+    }
   } catch {
     // Silently fail — non-critical
   }
 }
 
-async function sendRepEvent(sessionId: string, repCount: number, repScore: number) {
+async function sendRepEvent(sessionId: string, repCount: number, repScore: number, onCoachingCb?: (text: string) => void) {
+  // Skip network calls for local/offline sessions
+  if (sessionId.startsWith('local-')) return;
   try {
-    await fetch(`${API_BASE}/api/events/rep`, {
+    const resp = await fetch(`${API_BASE}/api/events/rep`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sessionId, repCount, repScore }),
     });
+    if (resp.ok && onCoachingCb) {
+      const data = await resp.json();
+      if (data.coaching?.text) onCoachingCb(data.coaching.text);
+    }
   } catch {
     // Silently fail — non-critical
   }

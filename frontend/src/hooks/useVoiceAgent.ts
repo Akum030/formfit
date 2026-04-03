@@ -1,17 +1,22 @@
 /**
- * useVoiceAgent — Persistent voice connection to backend for
- * continuous duplex voice coaching via Sarvam AI.
+ * useVoiceAgent — Browser-native voice coaching using Web Speech API.
+ *
+ * Zero external API dependencies — uses:
+ *  - SpeechRecognition (STT) for always-on listening
+ *  - SpeechSynthesis (TTS) with smart voice selection for natural-sounding speech
  *
  * Features:
- *  - Always-listening microphone (no push-to-talk)
- *  - WebSocket streaming of audio chunks
- *  - TTS playback of coaching responses
- *  - Smart interruptibility: requires sustained loud speech to interrupt coach
- *  - Doesn't send audio to backend when coach is speaking (prevents echo)
+ *  - Always-listening microphone via SpeechRecognition (no push-to-talk)
+ *  - Natural-sounding TTS with preference for high-quality Google/Microsoft voices
+ *  - Smart interruptibility: user speech stops current TTS playback
+ *  - Sends user transcripts to backend for coaching responses
+ *  - Works 100% offline (no API keys needed)
+ *  - Stable callback refs prevent reconnection on parent re-renders
+ *  - Interim results for faster partial recognition feedback
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { VoiceState, VoiceMessage, CoachingMessage } from '../types';
+import type { VoiceState, CoachingMessage } from '../types';
 
 interface UseVoiceAgentOptions {
   sessionId: string | null;
@@ -26,17 +31,68 @@ interface UseVoiceAgentResult {
   lastTranscript: string;
   isMuted: boolean;
   toggleMute: () => void;
-  playCoachingAudio: (audioBase64: string) => void;
+  /** Speak text via browser SpeechSynthesis (fallback) */
+  speakText: (text: string) => void;
+  /** Play backend audioBase64 (natural Sarvam voice), falls back to speakText */
+  speakCoaching: (text: string, audioBase64?: string) => void;
 }
 
-const WS_BASE = import.meta.env.VITE_API_BASE_URL
-  ? import.meta.env.VITE_API_BASE_URL.replace('http', 'ws')
-  : `ws://${window.location.hostname}:4000`;
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
-// -- Interrupt detection config --
-const INTERRUPT_AMP_THRESHOLD = 0.06;   // Much higher — real speech, not noise
-const INTERRUPT_FRAMES_NEEDED = 3;       // Need 3 consecutive loud chunks (~750ms)
-const POST_SPEAK_COOLDOWN_MS = 600;      // Don't listen for 600ms after coach finishes
+// SpeechRecognition cross-browser support
+const SpeechRecognitionAPI =
+  (window as unknown as Record<string, unknown>).SpeechRecognition ||
+  (window as unknown as Record<string, unknown>).webkitSpeechRecognition;
+
+/**
+ * Select the best-quality voice for the given language.
+ * Prefers Google > Microsoft Online > Apple voices as they sound more natural.
+ * If no good Hindi voice exists, falls back to English (coaching text is Hinglish).
+ */
+function selectBestVoice(voices: SpeechSynthesisVoice[], langCode: string): SpeechSynthesisVoice | null {
+  const baseLang = langCode.split('-')[0]; // 'hi' from 'hi-IN'
+
+  // Filter voices that match the language
+  let langVoices = voices.filter(
+    (v) => v.lang === langCode || v.lang.startsWith(baseLang)
+  );
+
+  // Scoring: higher = better quality (based on voice provider)
+  function voiceScore(v: SpeechSynthesisVoice): number {
+    const name = v.name.toLowerCase();
+    let score = 0;
+    // Google voices (Chrome) are the most natural-sounding
+    if (name.includes('google')) score += 100;
+    // Microsoft Online (Edge) voices are very good — neural TTS
+    if (name.includes('microsoft') && name.includes('online')) score += 90;
+    // Regular Microsoft voices are decent
+    if (name.includes('microsoft')) score += 50;
+    // Apple voices (Safari) are decent
+    if (name.includes('samantha') || name.includes('daniel') || name.includes('moira')) score += 60;
+    // Prefer non-local/network voices (typically higher quality)
+    if (!v.localService) score += 30;
+    // Prefer male voices for gym trainer persona
+    if (name.includes('male') || name.includes('ravi') || name.includes('madhur')) score += 10;
+    return score;
+  }
+
+  // If no high-quality Hindi voices exist, fall back to English (en-IN or en-US)
+  // The coaching text is Romanized Hindi/Hinglish which English voices read well
+  if (langVoices.length === 0 || langVoices.every(v => voiceScore(v) < 50)) {
+    const englishVoices = voices.filter(
+      (v) => v.lang.startsWith('en-IN') || v.lang.startsWith('en-US') || v.lang.startsWith('en-GB')
+    );
+    if (englishVoices.length > 0) {
+      langVoices = [...langVoices, ...englishVoices];
+    }
+  }
+
+  if (langVoices.length === 0) return null;
+
+  // Sort by quality score, pick best
+  langVoices.sort((a, b) => voiceScore(b) - voiceScore(a));
+  return langVoices[0];
+}
 
 export function useVoiceAgent({
   sessionId,
@@ -46,271 +102,335 @@ export function useVoiceAgent({
   onTranscript,
 }: UseVoiceAgentOptions): UseVoiceAgentResult {
   const [voiceState, setVoiceState] = useState<VoiceState>('idle');
-  const voiceStateRef = useRef<VoiceState>('idle');
   const [lastTranscript, setLastTranscript] = useState('');
   const [isMuted, setIsMuted] = useState(false);
 
-  const wsRef = useRef<WebSocket | null>(null);
-  useEffect(() => { voiceStateRef.current = voiceState; }, [voiceState]);
-
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const mediaStreamRef = useRef<MediaStream | null>(null);
-  const processorRef = useRef<ScriptProcessorNode | null>(null);
-  const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
-  const playbackSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const mutedRef = useRef(false);
+  const recognitionRef = useRef<InstanceType<typeof SpeechRecognitionAPI> | null>(null);
+  const synthRef = useRef(window.speechSynthesis);
+  const isSpeakingRef = useRef(false);
+  const cachedVoiceRef = useRef<SpeechSynthesisVoice | null>(null);
+  const cachedVoiceLangRef = useRef<string>('');
 
-  // Interrupt debounce state
-  const interruptFrameCount = useRef(0);
-  const speakEndTime = useRef(0);
+  // Stable refs for callbacks
+  const onCoachingRef = useRef(onCoaching);
+  const onTranscriptRef = useRef(onTranscript);
+  onCoachingRef.current = onCoaching;
+  onTranscriptRef.current = onTranscript;
+
+  const sessionIdRef = useRef(sessionId);
   const languageRef = useRef(language);
+  sessionIdRef.current = sessionId;
+  languageRef.current = language;
 
-  // Send language change to backend via WebSocket control message
+  // ── Preload voices on mount (Chrome loads them asynchronously) ──
   useEffect(() => {
-    languageRef.current = language;
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type: 'set_language', language }));
+    const synth = window.speechSynthesis;
+    // Force voice list load
+    synth.getVoices();
+    const handleVoicesChanged = () => {
+      const voices = synth.getVoices();
+      if (voices.length > 0) {
+        console.log(`[Voice] ${voices.length} voices available`);
+        // Pre-cache best voice for current language
+        const best = selectBestVoice(voices, languageRef.current);
+        if (best) {
+          cachedVoiceRef.current = best;
+          cachedVoiceLangRef.current = languageRef.current;
+          console.log(`[Voice] Selected: "${best.name}" (${best.lang})`);
+        }
+      }
+    };
+    synth.addEventListener('voiceschanged', handleVoicesChanged);
+    // Also try immediately (Firefox populates sync)
+    handleVoicesChanged();
+    return () => synth.removeEventListener('voiceschanged', handleVoicesChanged);
+  }, []);
+
+  // ── Update cached voice when language changes ──
+  useEffect(() => {
+    if (cachedVoiceLangRef.current !== language) {
+      const voices = synthRef.current.getVoices();
+      const best = selectBestVoice(voices, language);
+      if (best) {
+        cachedVoiceRef.current = best;
+        cachedVoiceLangRef.current = language;
+        console.log(`[Voice] Language changed, selected: "${best.name}" (${best.lang})`);
+      }
     }
   }, [language]);
 
-  // Play coaching audio via Web Audio API
-  const playCoachingAudio = useCallback((audioBase64: string) => {
-    if (!audioBase64 || mutedRef.current) return;
+  // ── TTS: Speak coaching text via browser SpeechSynthesis ──
+  const speakText = useCallback((text: string) => {
+    if (!text || mutedRef.current) return;
 
     try {
-      const ctx = audioContextRef.current || new AudioContext();
-      audioContextRef.current = ctx;
+      const synth = synthRef.current;
+      // Cancel any currently playing speech
+      synth.cancel();
 
-      // Stop any currently playing audio
-      if (playbackSourceRef.current) {
-        try { playbackSourceRef.current.stop(); } catch { /* ignore */ }
+      const langCode = languageRef.current || 'hi-IN';
+
+      // Ensure voice is cached for current language
+      if (!cachedVoiceRef.current || cachedVoiceLangRef.current !== langCode) {
+        const voices = synth.getVoices();
+        const best = selectBestVoice(voices, langCode);
+        if (best) {
+          cachedVoiceRef.current = best;
+          cachedVoiceLangRef.current = langCode;
+        }
       }
 
-      // Decode base64 to ArrayBuffer
-      const binary = atob(audioBase64);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i);
-      }
-
+      isSpeakingRef.current = true;
       setVoiceState('speaking');
-      interruptFrameCount.current = 0; // Reset interrupt counter
 
-      ctx.decodeAudioData(bytes.buffer.slice(0), (buffer) => {
-        const source = ctx.createBufferSource();
-        source.buffer = buffer;
-        source.connect(ctx.destination);
-        source.onended = () => {
-          speakEndTime.current = Date.now(); // Track when coach stopped
+      // Chrome bug workaround: long utterances get cut off after ~15s
+      // Split into sentences if text is very long
+      if (text.length > 200) {
+        const sentences = (text.match(/[^.!?।]+[.!?।]?\s*/g) || [text]).filter(s => s.trim().length > 0);
+        let i = 0;
+        function speakNext() {
+          if (i >= sentences.length || mutedRef.current) {
+            isSpeakingRef.current = false;
+            setVoiceState('listening');
+            return;
+          }
+          const chunk = new SpeechSynthesisUtterance(sentences[i].trim());
+          if (cachedVoiceRef.current) chunk.voice = cachedVoiceRef.current;
+          chunk.lang = langCode;
+          chunk.rate = 0.95;
+          chunk.pitch = 0.95;
+          chunk.volume = 1.0;
+          chunk.onend = () => { i++; speakNext(); };
+          chunk.onerror = () => { isSpeakingRef.current = false; setVoiceState('listening'); };
+          synth.speak(chunk);
+        }
+        speakNext();
+      } else {
+        // Short text — speak as a single utterance
+        const utterance = new SpeechSynthesisUtterance(text);
+        if (cachedVoiceRef.current) utterance.voice = cachedVoiceRef.current;
+        utterance.lang = langCode;
+        utterance.rate = 0.95;
+        utterance.pitch = 0.95;
+        utterance.volume = 1.0;
+        utterance.onend = () => {
+          isSpeakingRef.current = false;
           setVoiceState('listening');
-          playbackSourceRef.current = null;
         };
-        playbackSourceRef.current = source;
-        source.start(0);
-      }).catch(() => {
-        setVoiceState('listening');
-      });
+        utterance.onerror = () => {
+          isSpeakingRef.current = false;
+          setVoiceState('listening');
+        };
+        synth.speak(utterance);
+      }
     } catch {
+      isSpeakingRef.current = false;
       setVoiceState('listening');
     }
   }, []);
 
-  // Connect WebSocket + start mic
-  useEffect(() => {
-    if (!sessionId || !isActive) return;
+  // ── Send user transcript to backend for coaching response ──
+  const handleUserSpeech = useCallback(async (text: string) => {
+    if (!text || !sessionIdRef.current) return;
 
-    let ws: WebSocket;
-    let cleanedUp = false;
+    try {
+      const res = await fetch(`${API_BASE}/api/coaching/respond`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: sessionIdRef.current,
+          userText: text,
+          language: languageRef.current,
+        }),
+      });
 
-    async function connect() {
-      try {
-        ws = new WebSocket(`${WS_BASE}/ws/voice?sessionId=${sessionId}&lang=${language}`);
-        wsRef.current = ws;
-
-        ws.onopen = () => {
-          console.log('[Voice] WebSocket connected');
-          setVoiceState('listening');
-        };
-
-        ws.onmessage = (event) => {
-          try {
-            const msg: VoiceMessage = JSON.parse(event.data);
-
-            switch (msg.type) {
-              case 'transcript':
-                if (msg.text) {
-                  setLastTranscript(msg.text);
-                  onTranscript?.(msg.text);
-                }
-                break;
-
-              case 'coaching':
-                if (msg.text) {
-                  const coaching: CoachingMessage = {
-                    text: msg.text,
-                    audioBase64: msg.audioBase64 || '',
-                    trigger: (msg.trigger as CoachingMessage['trigger']) || 'form',
-                  };
-                  onCoaching?.(coaching);
-
-                  if (msg.audioBase64) {
-                    playCoachingAudio(msg.audioBase64);
-                  }
-                }
-                break;
-
-              case 'interrupted':
-                if (playbackSourceRef.current) {
-                  try { playbackSourceRef.current.stop(); } catch { /* ignore */ }
-                  playbackSourceRef.current = null;
-                }
-                setVoiceState('listening');
-                break;
-            }
-          } catch { /* ignore parse errors */ }
-        };
-
-        ws.onerror = () => {
-          console.warn('[Voice] WebSocket error');
-          setVoiceState('error');
-        };
-
-        ws.onclose = () => {
-          if (!cleanedUp) {
-            console.log('[Voice] WebSocket closed');
-            setVoiceState('idle');
-          }
-        };
-
-        // Start microphone
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true,
-            sampleRate: 16000,
-          },
-        });
-        mediaStreamRef.current = stream;
-
-        const audioCtx = new AudioContext({ sampleRate: 16000 });
-        audioContextRef.current = audioCtx;
-        console.log(`[Voice] AudioContext sampleRate: ${audioCtx.sampleRate}`);
-
-        const source = audioCtx.createMediaStreamSource(stream);
-        sourceRef.current = source;
-
-        const processor = audioCtx.createScriptProcessor(4096, 1, 1);
-        processorRef.current = processor;
-
-        let chunkCount = 0;
-        processor.onaudioprocess = (e) => {
-          if (mutedRef.current || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-
-          const input = e.inputBuffer.getChannelData(0);
-
-          // Check for actual audio activity
-          let maxAmp = 0;
-          for (let i = 0; i < input.length; i++) {
-            const abs = Math.abs(input[i]);
-            if (abs > maxAmp) maxAmp = abs;
-          }
-
-          const currentState = voiceStateRef.current;
-          const timeSinceSpeakEnd = Date.now() - speakEndTime.current;
-
-          // ── When coach is speaking: DON'T send audio, only detect interrupts ──
-          if (currentState === 'speaking') {
-            if (maxAmp > INTERRUPT_AMP_THRESHOLD) {
-              interruptFrameCount.current++;
-              if (interruptFrameCount.current >= INTERRUPT_FRAMES_NEEDED) {
-                // Confirmed deliberate speech — interrupt the coach
-                if (playbackSourceRef.current) {
-                  try { playbackSourceRef.current.stop(); } catch { /* ignore */ }
-                  playbackSourceRef.current = null;
-                }
-                if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-                  wsRef.current.send(JSON.stringify({ type: 'interrupt' }));
-                }
-                interruptFrameCount.current = 0;
-                speakEndTime.current = Date.now();
-                setVoiceState('listening');
-                console.log('[Voice] Interrupted coach (sustained speech detected)');
-              }
-            } else {
-              interruptFrameCount.current = 0; // Reset if not sustained
-            }
-            return; // Don't send audio while coach is speaking
-          }
-
-          // ── Cooldown after coach finishes — ignore sounds briefly ──
-          if (timeSinceSpeakEnd < POST_SPEAK_COOLDOWN_MS) {
-            return; // Wait for echo to settle
-          }
-
-          // ── Normal listening: send audio if there's signal ──
-          if (maxAmp < 0.005) return;
-
-          // Convert Float32 to Int16 PCM
-          const pcm = new Int16Array(input.length);
-          for (let i = 0; i < input.length; i++) {
-            const s = Math.max(-1, Math.min(1, input[i]));
-            pcm[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-          }
-
-          chunkCount++;
-          if (chunkCount % 20 === 1) {
-            console.log(`[Voice] Sending audio chunk #${chunkCount}, maxAmp=${maxAmp.toFixed(4)}`);
-          }
-
-          wsRef.current.send(pcm.buffer);
-        };
-
-        source.connect(processor);
-        processor.connect(audioCtx.destination);
-
-      } catch (err) {
-        console.error('[Voice] Setup error:', err);
-        setVoiceState('error');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.text) {
+          const coaching: CoachingMessage = {
+            text: data.text,
+            audioBase64: '',
+            trigger: data.trigger || 'user_speech',
+          };
+          onCoachingRef.current?.(coaching);
+          speakText(data.text);
+        }
       }
+    } catch {
+      // Silently ignore — backend may be unavailable but app still works
+    }
+  }, [speakText]);
+
+  // ── STT: Start/stop SpeechRecognition based on session state ──
+  useEffect(() => {
+    if (!sessionId || !isActive || !SpeechRecognitionAPI) {
+      // Clean up recognition if it exists
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch { /* ignore */ }
+        recognitionRef.current = null;
+      }
+      if (!isActive) setVoiceState('idle');
+      return;
     }
 
-    connect();
+    const recognition = new SpeechRecognitionAPI();
+    recognition.continuous = true;
+    // Enable interim results for faster partial feedback
+    recognition.interimResults = true;
+    recognition.lang = language;
+    recognition.maxAlternatives = 3;
+    recognitionRef.current = recognition;
+
+    let shouldRestart = true;
+    let lastFinalTimestamp = 0;
+    let restartAttempts = 0; // Backoff counter — prevents tight restart loop
+
+    recognition.onstart = () => {
+      console.log('[Voice] SpeechRecognition started, lang:', language);
+      setVoiceState('listening');
+      restartAttempts = 0; // Reset backoff on successful start
+    };
+
+    recognition.onresult = (event: { resultIndex: number; results: SpeechRecognitionResultList }) => {
+      // Process all results from the current event
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const result = event.results[i];
+        const text = result[0]?.transcript?.trim();
+
+        if (!text) continue;
+
+        if (result.isFinal) {
+          // Debounce: avoid processing the same final result twice in quick succession
+          const now = Date.now();
+          if (now - lastFinalTimestamp < 300) continue;
+          lastFinalTimestamp = now;
+
+          // Only process if confidence is reasonable (> 0.3)
+          const confidence = result[0]?.confidence ?? 0;
+          if (confidence < 0.3) {
+            console.log(`[Voice] Low confidence (${(confidence * 100).toFixed(0)}%), skipping: "${text}"`);
+            continue;
+          }
+
+          console.log(`[Voice] Final (${(confidence * 100).toFixed(0)}%): "${text}"`);
+          setLastTranscript(text);
+          onTranscriptRef.current?.(text);
+
+          // If coach is speaking, interrupt
+          if (isSpeakingRef.current) {
+            synthRef.current.cancel();
+            isSpeakingRef.current = false;
+            setVoiceState('listening');
+          }
+
+          // Send user speech to backend for coaching response
+          handleUserSpeech(text);
+        } else {
+          // Interim result — show as live "hearing" indicator
+          setLastTranscript(`${text}...`);
+        }
+      }
+    };
+
+    recognition.onerror = (event: { error: string }) => {
+      // 'no-speech' is normal — just means silence, not an actual error
+      if (event.error === 'no-speech' || event.error === 'aborted') return;
+      console.warn('[Voice] SpeechRecognition error:', event.error);
+      // 'not-allowed' means microphone permission denied
+      if (event.error === 'not-allowed') {
+        setVoiceState('error');
+        shouldRestart = false;
+      }
+    };
+
+    recognition.onend = () => {
+      // SpeechRecognition stops after silence — auto-restart if session is still active
+      // Use exponential backoff to prevent tight restart loop burning CPU
+      if (shouldRestart) {
+        restartAttempts++;
+        const backoffMs = Math.min(5000, 100 * Math.pow(2, restartAttempts - 1));
+        setTimeout(() => {
+          if (!shouldRestart) return;
+          try {
+            recognition.start();
+          } catch {
+            // May fail if already started, ignore
+          }
+        }, backoffMs);
+      }
+    };
+
+    try {
+      recognition.start();
+    } catch {
+      console.warn('[Voice] Failed to start SpeechRecognition');
+      setVoiceState('error');
+    }
 
     return () => {
-      cleanedUp = true;
-
-      if (processorRef.current) {
-        processorRef.current.disconnect();
-        processorRef.current = null;
-      }
-      if (sourceRef.current) {
-        sourceRef.current.disconnect();
-        sourceRef.current = null;
-      }
-      if (mediaStreamRef.current) {
-        mediaStreamRef.current.getTracks().forEach((t) => t.stop());
-        mediaStreamRef.current = null;
-      }
-      if (playbackSourceRef.current) {
-        try { playbackSourceRef.current.stop(); } catch { /* ignore */ }
-        playbackSourceRef.current = null;
-      }
-      if (wsRef.current) {
-        wsRef.current.close();
-        wsRef.current = null;
-      }
-
+      shouldRestart = false;
+      try { recognition.stop(); } catch { /* ignore */ }
+      recognitionRef.current = null;
+      synthRef.current.cancel();
+      isSpeakingRef.current = false;
       setVoiceState('idle');
     };
-  }, [sessionId, isActive, onCoaching, onTranscript, playCoachingAudio]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId, isActive, language]);
 
   const toggleMute = useCallback(() => {
     setIsMuted((m) => {
-      mutedRef.current = !m;
-      return !m;
+      const next = !m;
+      mutedRef.current = next;
+      // If muting, stop TTS and pause recognition
+      if (next) {
+        synthRef.current.cancel();
+        isSpeakingRef.current = false;
+      }
+      return next;
     });
   }, []);
 
-  return { voiceState, lastTranscript, isMuted, toggleMute, playCoachingAudio };
+  /**
+   * Play backend audioBase64 (natural Sarvam TTS voice) if available,
+   * otherwise fall back to browser SpeechSynthesis.
+   */
+  const speakCoaching = useCallback((text: string, audioBase64?: string) => {
+    if (!text || mutedRef.current) return;
+
+    // If backend provided real audio (Sarvam TTS), play it as an Audio element
+    if (audioBase64 && audioBase64.length > 100) {
+      try {
+        // Cancel any browser TTS
+        synthRef.current.cancel();
+        isSpeakingRef.current = true;
+        setVoiceState('speaking');
+
+        const audio = new Audio(`data:audio/wav;base64,${audioBase64}`);
+        audio.onended = () => {
+          isSpeakingRef.current = false;
+          setVoiceState('listening');
+        };
+        audio.onerror = () => {
+          // Audio playback failed — fall back to browser TTS
+          isSpeakingRef.current = false;
+          speakText(text);
+        };
+        audio.play().catch(() => {
+          // Autoplay blocked — fall back to browser TTS
+          isSpeakingRef.current = false;
+          speakText(text);
+        });
+        return;
+      } catch {
+        // Fall through to browser TTS
+      }
+    }
+
+    // Fallback: browser SpeechSynthesis
+    speakText(text);
+  }, [speakText]);
+
+  return { voiceState, lastTranscript, isMuted, toggleMute, speakText, speakCoaching };
 }

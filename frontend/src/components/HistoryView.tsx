@@ -1,48 +1,72 @@
 /**
  * HistoryView — Displays past workout sessions with drill-down details.
+ * Enhanced with user filtering, date range, and improved exercise journal styling.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import type { Session } from '../types';
 import { scoreToColor } from '../utils/pose';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
+
+function getUserId(): string | null {
+  return localStorage.getItem('gym-userId');
+}
 
 interface HistoryViewProps {
   onBack: () => void;
 }
 
 export function HistoryView({ onBack }: HistoryViewProps) {
+  const userId = getUserId();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+
+  // Extracted so it can be called from both useEffect and retry button
+  const fetchSessions = useCallback(async () => {
+    try {
+      setLoading(true);
+      setFetchError(false);
+      const url = userId
+        ? `${API_BASE}/api/sessions?limit=30&userId=${userId}`
+        : `${API_BASE}/api/sessions?limit=30`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        setSessions(data);
+      } else {
+        setFetchError(true);
+      }
+    } catch (err) {
+      console.error('[History] fetch error:', err);
+      setFetchError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [userId]);
 
   useEffect(() => {
-    async function fetchSessions() {
-      try {
-        const res = await fetch(`${API_BASE}/api/sessions?limit=20`);
-        if (res.ok) {
-          const data = await res.json();
-          setSessions(data);
-        }
-      } catch (err) {
-        console.error('[History] fetch error:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
     fetchSessions();
-  }, []);
+  }, [fetchSessions]);
 
   async function loadSessionDetail(id: string) {
+    setDetailLoading(true);
     try {
       const res = await fetch(`${API_BASE}/api/sessions/${id}`);
       if (res.ok) {
         const data = await res.json();
         setSelectedSession(data);
+      } else {
+        alert('Failed to load session details.');
       }
     } catch (err) {
       console.error('[History] detail error:', err);
+      alert('Network error. Check your connection.');
+    } finally {
+      setDetailLoading(false);
     }
   }
 
@@ -70,11 +94,25 @@ export function HistoryView({ onBack }: HistoryViewProps) {
       )}
 
       {/* Empty state */}
-      {!loading && sessions.length === 0 && !selectedSession && (
+      {!loading && !fetchError && sessions.length === 0 && !selectedSession && (
         <div className="text-center py-12">
           <div className="text-3xl font-black text-white/20 mb-4">FIT</div>
           <p className="text-white/50 text-lg">No workouts yet</p>
           <p className="text-white/30 text-sm mt-1">Complete a workout to see it here</p>
+        </div>
+      )}
+
+      {/* Fetch error state */}
+      {!loading && fetchError && (
+        <div className="text-center py-12">
+          <p className="text-red-400 text-lg font-medium">Failed to load sessions</p>
+          <p className="text-white/40 text-sm mt-1">Check your connection and try again</p>
+          <button
+            onClick={fetchSessions}
+            className="mt-4 px-4 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors"
+          >
+            Retry
+          </button>
         </div>
       )}
 
@@ -85,7 +123,8 @@ export function HistoryView({ onBack }: HistoryViewProps) {
             <button
               key={session.id}
               onClick={() => loadSessionDetail(session.id)}
-              className="w-full glass-card p-4 text-left hover:bg-white/10 transition-colors"
+              disabled={detailLoading}
+              className="w-full glass-card p-4 text-left hover:bg-white/10 transition-colors disabled:opacity-50"
             >
               <div className="flex justify-between items-start">
                 <div>
@@ -174,9 +213,11 @@ export function HistoryView({ onBack }: HistoryViewProps) {
                 </div>
                 <div>
                   <div className="text-xl font-bold text-white">
-                    {selectedSession.endedAt && selectedSession.startedAt
-                      ? `${Math.round((new Date(selectedSession.endedAt).getTime() - new Date(selectedSession.startedAt).getTime()) / 60000)}m`
-                      : '—'}
+                    {(() => {
+                      if (!selectedSession.endedAt || !selectedSession.startedAt) return '—';
+                      const ms = new Date(selectedSession.endedAt).getTime() - new Date(selectedSession.startedAt).getTime();
+                      return isNaN(ms) || ms < 0 ? '—' : `${Math.round(ms / 60000)}m`;
+                    })()}
                   </div>
                   <div className="text-white/40 text-xs">Duration</div>
                 </div>

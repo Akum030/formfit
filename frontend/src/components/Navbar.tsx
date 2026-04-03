@@ -8,6 +8,8 @@ const NAV_LINKS = [
   { path: '/', label: 'Home' },
   { path: '/workout', label: 'Workout' },
   { path: '/history', label: 'History' },
+  { path: '/food-journal', label: 'Food' },
+  { path: '/diet-plan', label: 'Diet' },
 ];
 
 export function Navbar() {
@@ -27,15 +29,15 @@ export function Navbar() {
           </div>
         </Link>
 
-        {/* Nav Links */}
-        <div className="flex items-center gap-1 bg-white/[0.03] rounded-xl p-1 border border-white/[0.06]">
+        {/* Nav Links — scrollable on mobile so all 5 links remain accessible */}
+        <div className="flex items-center gap-1 bg-white/[0.03] rounded-xl p-1 border border-white/[0.06] overflow-x-auto scrollbar-hide max-w-[60vw] sm:max-w-none">
           {NAV_LINKS.map((link) => {
             const isActive = location.pathname === link.path;
             return (
               <Link
                 key={link.path}
                 to={link.path}
-                className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                className={`relative px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
                   isActive
                     ? 'bg-gradient-to-r from-emerald-500/20 to-cyan-500/15 text-white shadow-sm'
                     : 'text-white/40 hover:text-white/70 hover:bg-white/[0.04]'
@@ -54,7 +56,7 @@ export function Navbar() {
         <div className="flex items-center gap-2">
           <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-500/10 border border-violet-500/20">
             <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
-            <span className="text-violet-400 text-xs font-medium">Gemini + Sarvam AI</span>
+            <span className="text-violet-400 text-xs font-medium">AI Powered</span>
           </div>
         </div>
       </div>

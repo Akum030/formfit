@@ -9,6 +9,8 @@ import type { RepPhase } from '../types';
 interface PoseGuideProps {
   exerciseId: string;
   phase: RepPhase;
+  /** When true, renders as a large panel (same size as camera) */
+  fullSize?: boolean;
 }
 
 // SVG stick figure points for each exercise/phase
@@ -131,15 +133,15 @@ const SHOULDER_PRESS_BOTTOM: FigurePoints = {
   lAnkle: [43, 95], rAnkle: [57, 95],
 };
 
-function getFigure(exerciseId: string, phase: RepPhase): FigurePoints {
+function getFigure(exerciseId: string, phase: RepPhase): FigurePoints | null {
   const isBottom = phase === 'bottom' || phase === 'eccentric';
   switch (exerciseId) {
-    case 'squat': return isBottom ? SQUAT_BOTTOM : SQUAT_TOP;
-    case 'pushup': return isBottom ? PUSHUP_BOTTOM : PUSHUP_TOP;
-    case 'lunge': return isBottom ? LUNGE_BOTTOM : LUNGE_TOP;
-    case 'bicep_curl': return isBottom ? CURL_BOTTOM : CURL_TOP;
-    case 'shoulder_press': return isBottom ? SHOULDER_PRESS_BOTTOM : SHOULDER_PRESS_TOP;
-    default: return SQUAT_TOP;
+    case 'squat': case 'goblet_squat': case 'sumo_squat': return isBottom ? SQUAT_BOTTOM : SQUAT_TOP;
+    case 'pushup': case 'wide_pushup': case 'diamond_pushup': return isBottom ? PUSHUP_BOTTOM : PUSHUP_TOP;
+    case 'lunge': case 'reverse_lunge': case 'curtsy_lunge': case 'side_lunge': case 'bulgarian_split_squat': return isBottom ? LUNGE_BOTTOM : LUNGE_TOP;
+    case 'bicep_curl': case 'hammer_curl': return isBottom ? CURL_BOTTOM : CURL_TOP;
+    case 'shoulder_press': case 'arnold_press': case 'pike_pushup': return isBottom ? SHOULDER_PRESS_BOTTOM : SHOULDER_PRESS_TOP;
+    default: return null; // No reference pose available for this exercise
   }
 }
 
@@ -163,7 +165,7 @@ function interpolateFigure(a: FigurePoints, b: FigurePoints, t: number): FigureP
 
 const ANIMATION_PHASES: RepPhase[] = ['top', 'eccentric', 'bottom', 'concentric'];
 
-export function PoseGuide({ exerciseId, phase }: PoseGuideProps) {
+export function PoseGuide({ exerciseId, phase, fullSize = false }: PoseGuideProps) {
   const [animPhaseIdx, setAnimPhaseIdx] = useState(0);
   const [interpT, setInterpT] = useState(0);
   const rafRef = useRef<number>(0);
@@ -171,11 +173,16 @@ export function PoseGuide({ exerciseId, phase }: PoseGuideProps) {
 
   const topFig = getFigure(exerciseId, 'top');
   const bottomFig = getFigure(exerciseId, 'bottom');
+  const hasFigure = topFig !== null && bottomFig !== null;
 
-  // Auto-cycle animation: top → down → bottom → up → repeat
+  // IMPORTANT: useEffect MUST be called before any conditional return to comply
+  // with React's Rules of Hooks (hooks must be called in the same order every render).
+  // Switching between exercises with/without poses would otherwise crash the app.
   useEffect(() => {
+    if (!hasFigure) return; // No-op when no reference pose exists
     let idx = 0;
     let t = 0;
+    lastTimeRef.current = 0; // Reset on exercise change to avoid delta spike
     const PHASE_DURATION = 800; // ms per phase transition
 
     function animate(timestamp: number) {
@@ -195,7 +202,21 @@ export function PoseGuide({ exerciseId, phase }: PoseGuideProps) {
 
     rafRef.current = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [exerciseId]);
+  }, [exerciseId, hasFigure]);
+
+  // If this exercise has no reference pose data, show a message instead of wrong pose
+  if (!topFig || !bottomFig) {
+    return (
+      <div className={fullSize ? "glass-card p-6 w-full max-w-[640px] aspect-[4/3] flex flex-col items-center justify-center" : "glass-card p-3"}>
+        <div className="flex items-center justify-between mb-2">
+          <span className={`${fullSize ? 'text-sm' : 'text-xs'} font-semibold text-white/60 uppercase tracking-wider`}>Reference Pose</span>
+        </div>
+        <div className="flex justify-center py-4">
+          <p className={`text-white/30 ${fullSize ? 'text-base' : 'text-xs'} text-center`}>No reference pose available for this exercise.<br/>Follow on-screen coaching cues.</p>
+        </div>
+      </div>
+    );
+  }
 
   // Compute interpolated figure based on animation phase
   const animPhase = ANIMATION_PHASES[animPhaseIdx];
@@ -213,6 +234,7 @@ export function PoseGuide({ exerciseId, phase }: PoseGuideProps) {
 
   const currentLabel = PHASE_LABELS[animPhase];
 
+  // Limb connections for the stick figure
   const limbs: [keyof FigurePoints, keyof FigurePoints][] = [
     ['neck', 'hip'],
     ['neck', 'lShoulder'], ['neck', 'rShoulder'],
@@ -223,6 +245,79 @@ export function PoseGuide({ exerciseId, phase }: PoseGuideProps) {
     ['rHip', 'rKnee'], ['rKnee', 'rAnkle'],
   ];
 
+  // Full-size mode: large panel matching camera aspect ratio
+  if (fullSize) {
+    return (
+      <div className="glass-card w-full max-w-[640px] aspect-[4/3] flex flex-col relative overflow-hidden bg-gradient-to-br from-gray-900 via-gray-900/95 to-emerald-900/10 border-emerald-500/20">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 pt-3 pb-1 z-10">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]" />
+            <span className="text-sm font-bold text-white/80 uppercase tracking-wider">Reference Pose</span>
+          </div>
+          <span className="text-xs px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-semibold">
+            {currentLabel}
+          </span>
+        </div>
+
+        {/* Large animated SVG fill */}
+        <div className="flex-1 flex items-center justify-center p-4">
+          <svg viewBox="0 0 100 120" className="w-full h-full max-w-[400px] max-h-[360px] opacity-95">
+            <defs>
+              <radialGradient id="figGlowLg" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#22c55e" stopOpacity="0.12" />
+                <stop offset="100%" stopColor="#22c55e" stopOpacity="0" />
+              </radialGradient>
+              <filter id="glowFilter">
+                <feGaussianBlur stdDeviation="1.5" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+            <circle cx="50" cy="55" r="50" fill="url(#figGlowLg)" />
+
+            {/* Limbs with glow */}
+            {limbs.map(([a, b], i) => (
+              <line
+                key={i}
+                x1={fig[a][0]} y1={fig[a][1]}
+                x2={fig[b][0]} y2={fig[b][1]}
+                stroke="#22c55e"
+                strokeWidth="3"
+                strokeLinecap="round"
+                opacity="0.8"
+                filter="url(#glowFilter)"
+              />
+            ))}
+
+            {/* Head */}
+            <circle
+              cx={fig.head[0]} cy={fig.head[1]}
+              r="7" fill="none" stroke="#22c55e" strokeWidth="2.5" opacity="0.9"
+              filter="url(#glowFilter)"
+            />
+
+            {/* Joints */}
+            {Object.entries(fig).map(([key, [x, y]]) => {
+              if (key === 'head') return null;
+              return (
+                <circle key={key} cx={x} cy={y} r="3.5" fill="#22c55e" opacity="0.95" />
+              );
+            })}
+          </svg>
+        </div>
+
+        {/* Bottom label */}
+        <div className="text-center pb-3 z-10">
+          <p className="text-white/50 text-sm">Follow this movement pattern</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Compact mode (sidebar)
   return (
     <div className="glass-card p-3">
       <div className="flex items-center justify-between mb-2">
@@ -261,13 +356,7 @@ export function PoseGuide({ exerciseId, phase }: PoseGuideProps) {
           {Object.entries(fig).map(([key, [x, y]]) => {
             if (key === 'head') return null;
             return (
-              <circle
-                key={key}
-                cx={x} cy={y}
-                r="2.5"
-                fill="#22c55e"
-                opacity="0.9"
-              />
+              <circle key={key} cx={x} cy={y} r="2.5" fill="#22c55e" opacity="0.9" />
             );
           })}
         </svg>

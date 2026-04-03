@@ -55,12 +55,14 @@ FitSenseAI is a **real-time AI personal trainer** that watches your workout thro
 
 | Layer | Technology |
 |-------|-----------|
-| Pose Detection | MoveNet Thunder (TensorFlow.js) — runs in-browser |
+| Pose Detection | MoveNet Lightning (TensorFlow.js) — runs in-browser, no API |
 | Form Scoring | Custom angle-constraint engine (per-phase, per-joint) |
-| AI Coach | **Gemini 2.5 Flash** (Google AI SDK) with multi-model fallback chain |
-| Voice STT | **Sarvam AI** saarika:v2.5 — Hindi (hi-IN) default |
-| Voice TTS | **Sarvam AI** bulbul:v2, speaker anushka — Hindi default |
-| Real-time Coaching | WebSocket duplex + CoachEngine with urgent interruption |
+| AI Coach | Template-based coaching engine (Hindi/English) — optional Gemini 2.5 Flash enhancement |
+| Voice STT | **Browser Web Speech API** — SpeechRecognition (hi-IN / en-IN) |
+| Voice TTS | **Browser Web Speech API** — SpeechSynthesis with Hindi voice selection |
+| Real-time Coaching | REST event-driven + CoachEngine with urgent interruption |
+| Food Analysis | Local Indian food database (60+ items) with fuzzy text matching — no API |
+| Diet Planning | BMR/TDEE algorithm (Mifflin-St Jeor) with Indian meal template DB — no API |
 | Frontend | React 18 + TypeScript + Vite + TailwindCSS |
 | Backend | Node.js + Express + TypeScript + WebSocket (ws) |
 | Database | Prisma ORM + SQLite (dev) / PostgreSQL (prod) |
@@ -74,7 +76,7 @@ FitSenseAI is a **real-time AI personal trainer** that watches your workout thro
 - Node.js 20+
 - npm 9+
 - A webcam and microphone
-- API Keys: `GEMINI_API_KEY` (required), `SARVAM_API_KEY` (for voice; text fallback otherwise)
+- **No API keys required** — all core features work 100% offline (optional: `GEMINI_API_KEY` for enhanced AI coaching)
 
 ### 1. Clone & Install
 
@@ -85,7 +87,7 @@ cd formfit
 # Backend
 cd backend
 cp .env.example .env
-# Add your GEMINI_API_KEY and optionally SARVAM_API_KEY to .env
+# No API keys needed! Optionally add GEMINI_API_KEY for enhanced AI coaching
 npm install
 npx prisma db push
 npx prisma generate
@@ -113,15 +115,15 @@ Open http://localhost:5174 in your browser.
 ### 3. Run with Docker (Production)
 
 ```bash
-# Copy and fill in your keys
+# Copy env (no keys needed for core features)
 cp backend/.env.example backend/.env
-# Edit backend/.env with GEMINI_API_KEY and SARVAM_API_KEY
+# Optionally add GEMINI_API_KEY for enhanced AI coaching
 
 docker compose up -d --build
 
 # Verify
 curl http://localhost:4000/health
-# Expected: {"status":"ok","service":"ai-gym-trainer"}
+# Expected: {"status":"ok","mode":"offline-capable","features":{...}}
 ```
 
 ### 4. Run E2E Tests
@@ -191,16 +193,16 @@ Each frame is scored 0-100% based on angle constraints:
 
 Angles are calculated at joint vertices (e.g., angle at knee = hip→knee→ankle) and compared against exercise-specific constraint ranges per movement phase (top/bottom/eccentric/concentric).
 
-## Voice Coaching
+## Voice Coaching (Browser-Native — No API Keys)
 
-With a Sarvam AI API key, the coach:
-- **Listens continuously** (no push-to-talk)
-- **Responds to questions** ("How's my form?", "How many reps left?")
+Using the browser's built-in Web Speech API:
+- **Listens continuously** via SpeechRecognition (no push-to-talk)
+- **Responds to questions** ("How's my form?", "Meri form kaisi hai?")
 - **Proactive feedback** when form drops below threshold
 - **Rep callouts** after each completed rep
+- **Hindi/English TTS** via SpeechSynthesis with Hindi voice selection
 - **Interruptible** — speaking while coach talks stops playback
-
-Without Sarvam API key, coaching is text-only using Gemini.
+- **Works 100% offline** — no external API calls for voice
 
 ## Environment Variables
 
@@ -210,11 +212,9 @@ Without Sarvam API key, coaching is text-only using Gemini.
 |----------|----------|---------|-------------|
 | `PORT` | No | 4000 | Server port |
 | `DATABASE_URL` | No | file:./dev.db | Prisma database URL |
-| `GEMINI_API_KEY` | **Yes** | — | Google Gemini API key |
-| `GEMINI_MODEL_NAME` | No | gemini-2.0-flash | Model name |
-| `SARVAM_API_KEY` | No | — | Sarvam AI key for voice |
-| `SARVAM_STT_ENDPOINT` | No | (default) | STT API endpoint |
-| `SARVAM_TTS_ENDPOINT` | No | (default) | TTS API endpoint |
+| `GEMINI_API_KEY` | No | — | Optional: enhances AI coaching with Gemini (template fallback without) |
+| `GEMINI_MODEL_NAME` | No | gemini-2.0-flash | Model name (only used if GEMINI_API_KEY set) |
+| `SARVAM_API_KEY` | No | — | Legacy: Sarvam AI voice (replaced by browser Web Speech API) |
 
 ### Frontend (.env)
 
@@ -225,8 +225,8 @@ Without Sarvam API key, coaching is text-only using Gemini.
 ## Docker Deployment
 
 ```bash
-# Set environment
-export GEMINI_API_KEY=your-key-here
+# No API keys required for core features
+# Optionally: export GEMINI_API_KEY=your-key for enhanced AI coaching
 
 # Build and run
 docker compose up -d --build
@@ -250,7 +250,10 @@ curl http://localhost:4000/health
 | POST | `/api/events/rep` | Rep completed event |
 | POST | `/api/coaching/start` | Start coaching engine |
 | POST | `/api/coaching/stop` | Stop coaching engine |
-| WS | `/ws/voice` | Duplex voice streaming |
+| POST | `/api/coaching/respond` | Coach responds to user speech |
+| POST | `/api/food/analyze` | Analyze food nutrition (local DB) |
+| POST | `/api/diet/generate` | Generate diet plan (BMR/TDEE) |
+| WS | `/ws/voice` | Legacy duplex voice streaming |
 
 ## Project Structure
 

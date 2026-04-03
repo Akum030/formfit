@@ -33,10 +33,10 @@ export interface CoachResponse {
   trigger: 'form' | 'rep' | 'user_speech' | 'set_transition' | 'session_start' | 'session_end';
 }
 
-const MIN_FORM_INTERVAL_MS = 8000;  // Don't nag more than once every 8s
-const MIN_REP_INTERVAL_MS = 3000;   // At least 3s between rep callouts
-const MIN_MOTIVATION_INTERVAL_MS = 15000; // Periodic encouragement every 15s
-const URGENT_FORM_INTERVAL_MS = 4000; // Proactive interruption for very bad form
+const MIN_FORM_INTERVAL_MS = 6000;  // Coach every 6s on form issues
+const MIN_REP_INTERVAL_MS = 2000;   // Quick rep callouts every 2s
+const MIN_MOTIVATION_INTERVAL_MS = 12000; // Encouragement every 12s
+const URGENT_FORM_INTERVAL_MS = 3000; // Urgent interruption every 3s for bad form
 
 export class CoachEngine {
   private sessionState: SessionState;
@@ -122,14 +122,14 @@ export class CoachEngine {
   }
 
   /**
-   * PROACTIVE urgent form interruption — like a trainer scolding you.
-   * Fires when form is very bad (score < 40) with shorter interval.
-   * Returns coaching that should be PUSHED via WebSocket immediately.
+   * PROACTIVE urgent form interruption — like a real desi gym trainer.
+   * Fires when form is bad (score < 50) with shorter interval.
+   * Also interrupts if issues persist for 2+ consecutive checks.
    */
   async checkUrgentFormInterruption(): Promise<CoachResponse | null> {
     const now = Date.now();
     if (now - this.lastUrgentCoachTime < URGENT_FORM_INTERVAL_MS) return null;
-    if (this.sessionState.currentScore >= 40) return null;
+    if (this.sessionState.currentScore >= 50) return null;
     if (this.sessionState.currentIssues.length === 0) return null;
 
     this.lastUrgentCoachTime = now;
@@ -302,26 +302,76 @@ export class CoachEngine {
   private async generateCoaching(trigger: CoachResponse['trigger']): Promise<CoachResponse | null> {
     this.abortController = new AbortController();
 
+    let text: string;
     try {
-      const text = await getCoachingFeedback(this.sessionState, this.sessionId);
+      text = await getCoachingFeedback(this.sessionState, this.sessionId);
       if (this.abortController.signal.aborted) return null;
-
-      let audioBase64 = '';
-      try {
-        const tts = await textToSpeech(text, this.sessionState.language);
-        if (this.abortController.signal.aborted) return null;
-        audioBase64 = tts.audioBase64;
-      } catch (ttsErr) {
-        console.warn('[CoachEngine] TTS failed, sending text-only:', ttsErr);
-      }
-
-      return { text, audioBase64, trigger };
     } catch (err) {
       if (this.abortController?.signal.aborted) return null;
-      console.error('[CoachEngine] coaching error:', err);
-      return null;
-    } finally {
-      this.abortController = null;
+      // Gemini unavailable — use hardcoded coaching so the coach never goes silent
+      text = this.getFallbackCoaching(trigger);
+      if (!text) return null;
     }
+
+    let audioBase64 = '';
+    try {
+      const tts = await textToSpeech(text, this.sessionState.language);
+      if (this.abortController.signal.aborted) return null;
+      audioBase64 = tts.audioBase64;
+    } catch (ttsErr) {
+      // TTS unavailable — browser SpeechSynthesis will handle it on frontend
+    }
+
+    this.abortController = null;
+    return { text, audioBase64, trigger };
+  }
+
+  /**
+   * Hardcoded coaching text when Gemini is unavailable.
+   * Ensures the coach ALWAYS speaks — never goes silent.
+   */
+  private getFallbackCoaching(trigger: CoachResponse['trigger']): string {
+    const isHindi = this.sessionState.language.startsWith('hi');
+    const { currentScore, currentIssues, repCount, targetReps, setNumber, targetSets, exerciseName } = this.sessionState;
+    const issue = currentIssues[0] || '';
+
+    if (trigger === 'form') {
+      if (currentScore < 40) {
+        const pool = isHindi
+          ? [`Arre! ${issue}. Dheere karo aur form pe dhyan do!`, `Nahi nahi! ${issue}. Pehle form theek karo bhai!`, `Ruko! ${issue}. Injury ho jayegi! Dhyan se karo.`]
+          : [`Stop! ${issue}. Slow down and fix your form!`, `No no! ${issue}. Fix that before the next rep!`, `Watch out! ${issue}. Focus on form, not speed!`];
+        return pool[Math.floor(Math.random() * pool.length)];
+      } else if (currentScore < 70) {
+        const pool = isHindi
+          ? [`${issue}. Thoda aur theek karo, almost correct hai!`, `Accha hai lekin ${issue}. Thoda adjust karo.`, `${issue} pe dhyan do. Baaki sab sahi hai!`]
+          : [`Almost there! ${issue}. Small adjustment needed.`, `Good effort! Just fix ${issue} and you're golden.`, `Watch your ${issue}. Everything else looks solid!`];
+        return pool[Math.floor(Math.random() * pool.length)];
+      } else {
+        const pool = isHindi
+          ? ['Bahut badhiya form! Aise hi karte raho!', 'Ekdum perfect! Keep going!', 'Zabardast! Form bilkul sahi hai. Maza aa gaya!', 'Shandar! Aise hi aage badho champion!']
+          : ['Perfect form! Keep it up!', 'Excellent! Your form looks great!', 'Amazing technique! You are crushing it!', 'Textbook form! Keep pushing!'];
+        return pool[Math.floor(Math.random() * pool.length)];
+      }
+    }
+
+    if (trigger === 'rep') {
+      const remaining = targetReps - repCount;
+      if (remaining <= 0) {
+        return isHindi ? `${repCount} reps done! Set complete! Bahut badhiya!` : `${repCount} reps! Set complete! Great work!`;
+      }
+      if (remaining <= 3) {
+        return isHindi ? `${repCount} reps ho gaye! Bas ${remaining} aur! Push karo!` : `${repCount} reps done! Just ${remaining} more! Push through!`;
+      }
+      const pool = isHindi
+        ? [`Nice! ${repCount} reps. Aage badho!`, `${repCount}! Bahut accha chal raha hai. Keep going!`, `That's ${repCount}! Mast chal raha hai!`]
+        : [`Nice, that's ${repCount}! Keep going!`, `Rep ${repCount} done! Looking strong!`, `${repCount} and counting! Great pace!`];
+      return pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    // Motivation / general
+    const pool = isHindi
+      ? [`Chal raha hai ${exerciseName}! Set ${setNumber} of ${targetSets}. Mehnat rang layegi!`, `Bahut accha! Aapki form acchi hai. Aur push karo!`, `Champion! Thoda aur effort lagao!`]
+      : [`Doing great on ${exerciseName}! Set ${setNumber} of ${targetSets}. Keep pushing!`, `Your form is looking solid! Keep that energy up!`, `You got this! Almost there, champion!`];
+    return pool[Math.floor(Math.random() * pool.length)];
   }
 }

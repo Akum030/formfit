@@ -4,6 +4,9 @@
  *
  * Returns the latest AI analysis result which can overlay/blend with
  * the local angle-based scoring.
+ *
+ * Auth resilience: Tracks consecutive failures and stops retrying after
+ * 3 failures (likely invalid API key) to prevent wasted network calls.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -35,7 +38,9 @@ interface UseGeminiAnalysisResult {
 }
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
-const ANALYSIS_INTERVAL_MS = 3500; // Slightly higher than backend rate limit
+const ANALYSIS_INTERVAL_MS = 5000;
+// Stop calling API after this many consecutive failures (likely auth error)
+const MAX_CONSECUTIVE_FAILURES = 3;
 
 export function useGeminiAnalysis({
   exercise,
@@ -49,6 +54,8 @@ export function useGeminiAnalysis({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const lastAnalysisTime = useRef(0);
   const previousAnalysis = useRef<GeminiAnalysis | null>(null);
+  /** Tracks consecutive API failures to detect auth issues */
+  const consecutiveFailures = useRef(0);
 
   const computeAllAngles = useCallback(
     (kps: Keypoint[]): Record<string, number> => {
@@ -111,6 +118,12 @@ export function useGeminiAnalysis({
   useEffect(() => {
     if (!exercise || !isActive || !sessionId || keypoints.length === 0) return;
 
+    // Skip API calls for local/offline sessions — no backend to call
+    if (sessionId.startsWith('local-')) return;
+
+    // Stop calling if API consistently fails (likely invalid key)
+    if (consecutiveFailures.current >= MAX_CONSECUTIVE_FAILURES) return;
+
     const now = Date.now();
     if (now - lastAnalysisTime.current < ANALYSIS_INTERVAL_MS) return;
     lastAnalysisTime.current = now;
@@ -135,15 +148,29 @@ export function useGeminiAnalysis({
         repCount,
       }),
     })
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          // Track non-OK responses (auth errors return 4xx)
+          consecutiveFailures.current++;
+          if (consecutiveFailures.current >= MAX_CONSECUTIVE_FAILURES) {
+            console.warn('[Gemini] Stopping analysis — API returning errors (check API key)');
+          }
+          return null;
+        }
+        consecutiveFailures.current = 0; // Reset on success
+        return res.json();
+      })
       .then((data) => {
-        if (data.analysis) {
+        if (data?.analysis) {
           setAiAnalysis(data.analysis);
           previousAnalysis.current = data.analysis;
         }
       })
       .catch(() => {
-        // Silently fail — non-critical
+        consecutiveFailures.current++;
+        if (consecutiveFailures.current >= MAX_CONSECUTIVE_FAILURES) {
+          console.warn('[Gemini] Stopping analysis — network errors (check backend)');
+        }
       })
       .finally(() => {
         setIsAnalyzing(false);
@@ -154,7 +181,13 @@ export function useGeminiAnalysis({
   useEffect(() => {
     setAiAnalysis(null);
     previousAnalysis.current = null;
+    consecutiveFailures.current = 0; // Give the API another chance with new exercise
   }, [exercise?.id]);
+
+  // Reset failure counter when session changes (new coaching session = fresh start)
+  useEffect(() => {
+    consecutiveFailures.current = 0;
+  }, [sessionId]);
 
   return {
     aiAnalysis,

@@ -12,9 +12,9 @@ import { type CoachEngine } from '../services/coachEngine';
 import { analyzePoseWithGemini, type PoseAnalysisInput } from '../services/geminiClient';
 import { sendCoachingToVoice } from './voice';
 
-// Rate limit Gemini pose analysis (expensive — max every 3 seconds)
+// Rate limit Gemini pose analysis (expensive — max every 5 seconds)
 const lastAnalysisTime = new Map<string, number>();
-const ANALYSIS_INTERVAL_MS = 3000;
+const ANALYSIS_INTERVAL_MS = 5000;
 
 // CoachEngine instances keyed by sessionId
 const activeEngines = new Map<string, CoachEngine>();
@@ -29,6 +29,8 @@ export function unregisterCoachEngine(sessionId: string) {
     engine.cancelPending();
     activeEngines.delete(sessionId);
   }
+  // Clean up rate-limit tracking to prevent memory leak
+  lastAnalysisTime.delete(sessionId);
 }
 
 export function getCoachEngine(sessionId: string): CoachEngine | undefined {

@@ -89,18 +89,18 @@ export function handleVoiceConnection(ws: WebSocket, request: IncomingMessage) {
 function handleAudioChunk(conn: VoiceConnection, chunk: Buffer) {
   conn.audioBuffer.push(chunk);
 
-  // Reset silence timer — process after 800ms of silence (gives user time to finish speaking)
+  // Reset silence timer — process after 600ms of silence (faster response to user)
   if (conn.silenceTimer) clearTimeout(conn.silenceTimer);
-  conn.silenceTimer = setTimeout(() => processAudioBuffer(conn), 800);
+  conn.silenceTimer = setTimeout(() => processAudioBuffer(conn), 600);
 
-  // Also set a max timer — force process after 8 seconds regardless of silence
+  // Also set a max timer — force process after 6 seconds regardless of silence
   if (!conn.maxTimer) {
     conn.maxTimer = setTimeout(() => {
       conn.maxTimer = null;
       if (conn.silenceTimer) clearTimeout(conn.silenceTimer);
       conn.silenceTimer = null;
       processAudioBuffer(conn);
-    }, 8000);
+    }, 6000);
   }
 }
 

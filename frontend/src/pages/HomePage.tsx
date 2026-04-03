@@ -46,7 +46,7 @@ const FEATURES = [
     icon: null,
     svgIcon: null,
     title: 'Gemini AI Analysis',
-    desc: 'Intelligent form scoring and real-time coaching powered by Google Gemini 2.5 Flash with multi-model fallback.',
+    desc: 'Optional AI-enhanced form scoring via Google Gemini 2.5 Flash. Falls back to local angle-based scoring when offline.',
     gradient: 'from-violet-500 to-fuchsia-500',
     border: 'border-violet-500/20',
     bg: 'from-violet-500/10 to-fuchsia-500/5',
@@ -57,7 +57,7 @@ const FEATURES = [
     icon: null,
     svgIcon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>',
     title: 'Voice Coach',
-    desc: 'Always-listening duplex voice agent with Sarvam AI — interrupt naturally and get spoken coaching feedback.',
+    desc: 'Always-listening voice agent with browser Web Speech API — interrupt naturally and get spoken coaching feedback. No API keys needed.',
     gradient: 'from-emerald-500 to-teal-500',
     border: 'border-emerald-500/20',
     bg: 'from-emerald-500/10 to-teal-500/5',
@@ -74,6 +74,28 @@ const FEATURES = [
     bg: 'from-amber-500/10 to-orange-500/5',
     textIcon: '%',
     iconColor: 'text-amber-400',
+  },
+  {
+    icon: null,
+    svgIcon: null,
+    title: 'Food Journal',
+    desc: 'Describe your meal — AI identifies Indian foods and calculates calories, protein, carbs & fat from a built-in food database.',
+    gradient: 'from-orange-500 to-amber-500',
+    border: 'border-orange-500/20',
+    bg: 'from-orange-500/10 to-amber-500/5',
+    textIcon: '🍛',
+    iconColor: 'text-orange-400',
+  },
+  {
+    icon: null,
+    svgIcon: null,
+    title: 'AI Diet Plan',
+    desc: 'Personalized Indian meal plans using BMR/TDEE science — dal, roti, paneer optimized for your fitness goals. Works offline.',
+    gradient: 'from-teal-500 to-emerald-500',
+    border: 'border-teal-500/20',
+    bg: 'from-teal-500/10 to-emerald-500/5',
+    textIcon: '🥗',
+    iconColor: 'text-teal-400',
   },
 ];
 
@@ -101,6 +123,25 @@ const EXERCISE_CARDS = [
   { id: 'deadlift', name: 'Deadlift', icon: '⚡', gradient: 'from-red-600 to-orange-500', shadow: 'shadow-red-600/20' },
   { id: 'goblet_squat', name: 'Goblet Squat', icon: '🏆', gradient: 'from-cyan-500 to-blue-500', shadow: 'shadow-cyan-500/20' },
   { id: 'overhead_tricep', name: 'Overhead Tricep', icon: '💎', gradient: 'from-violet-600 to-indigo-500', shadow: 'shadow-violet-600/20' },
+  // Lunge Variations
+  { id: 'reverse_lunge', name: 'Reverse Lunge', icon: '🔄', gradient: 'from-green-600 to-teal-500', shadow: 'shadow-green-600/20' },
+  { id: 'curtsy_lunge', name: 'Curtsy Lunge', icon: '🩰', gradient: 'from-pink-600 to-fuchsia-500', shadow: 'shadow-pink-600/20' },
+  { id: 'side_lunge', name: 'Side Lunge', icon: '↔️', gradient: 'from-sky-600 to-cyan-500', shadow: 'shadow-sky-600/20' },
+  { id: 'bulgarian_split_squat', name: 'Bulgarian Split Squat', icon: '🇧🇬', gradient: 'from-red-600 to-rose-500', shadow: 'shadow-red-600/20' },
+  // Push-up Variations
+  { id: 'pike_pushup', name: 'Pike Push-up', icon: '🔺', gradient: 'from-amber-600 to-orange-500', shadow: 'shadow-amber-600/20' },
+  { id: 'diamond_pushup', name: 'Diamond Push-up', icon: '💠', gradient: 'from-blue-600 to-indigo-500', shadow: 'shadow-blue-600/20' },
+  { id: 'wide_pushup', name: 'Wide Push-up', icon: '🤲', gradient: 'from-orange-600 to-amber-500', shadow: 'shadow-orange-600/20' },
+  // Glutes & Back
+  { id: 'hip_thrust', name: 'Hip Thrust', icon: '🍑', gradient: 'from-rose-600 to-pink-500', shadow: 'shadow-rose-600/20' },
+  { id: 'arnold_press', name: 'Arnold Press', icon: '🏅', gradient: 'from-yellow-600 to-amber-400', shadow: 'shadow-yellow-600/20' },
+  { id: 'bent_over_row', name: 'Bent Over Row', icon: '🚣', gradient: 'from-teal-600 to-emerald-500', shadow: 'shadow-teal-600/20' },
+  { id: 'good_morning', name: 'Good Morning', icon: '🌅', gradient: 'from-orange-500 to-yellow-400', shadow: 'shadow-orange-500/20' },
+  { id: 'romanian_deadlift', name: 'Romanian Deadlift', icon: '⚡', gradient: 'from-red-700 to-orange-600', shadow: 'shadow-red-700/20' },
+  { id: 'step_up', name: 'Step-up', icon: '🪜', gradient: 'from-emerald-600 to-green-500', shadow: 'shadow-emerald-600/20' },
+  // Cardio & Core
+  { id: 'mountain_climber', name: 'Mountain Climber', icon: '⛰️', gradient: 'from-slate-600 to-gray-500', shadow: 'shadow-slate-600/20' },
+  { id: 'plank_hold', name: 'Plank Hold', icon: '🧘', gradient: 'from-violet-500 to-purple-400', shadow: 'shadow-violet-500/20' },
 ];
 
 export function HomePage() {
@@ -194,7 +235,7 @@ export function HomePage() {
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 mb-8 animate-fade-in-up">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span className="text-emerald-400 text-sm font-semibold tracking-wide">
-              MoveNet + Gemini AI + Sarvam Voice
+              MoveNet + AI Coaching + Voice Agent
             </span>
           </div>
 
@@ -225,6 +266,18 @@ export function HomePage() {
               className="px-8 py-4 rounded-2xl font-bold text-white/70 bg-white/[0.04] border border-white/[0.1] hover:bg-white/[0.08] hover:text-white transition-all duration-300"
             >
               View History
+            </Link>
+            <Link
+              to="/food-journal"
+              className="px-8 py-4 rounded-2xl font-bold text-white/70 bg-white/[0.04] border border-white/[0.1] hover:bg-white/[0.08] hover:text-white transition-all duration-300"
+            >
+              🍛 Food Journal
+            </Link>
+            <Link
+              to="/diet-plan"
+              className="px-8 py-4 rounded-2xl font-bold text-white/70 bg-white/[0.04] border border-white/[0.1] hover:bg-white/[0.08] hover:text-white transition-all duration-300"
+            >
+              🥗 Diet Plan
             </Link>
           </div>
 
@@ -276,10 +329,10 @@ export function HomePage() {
         <div className="text-center mb-10">
           <h2 className="text-3xl md:text-4xl font-black text-white mb-3">Powered by AI</h2>
           <p className="text-white/35 max-w-xl mx-auto">
-            Three cutting-edge AI systems working together to be your perfect gym coach
+            Six powerful features working together to be your perfect gym coach
           </p>
         </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {FEATURES.map((f) => (
             <div
               key={f.title}
@@ -330,8 +383,8 @@ export function HomePage() {
             <h3 className="text-white/50 text-xs font-bold uppercase tracking-[0.2em] mb-4">Built With</h3>
             <div className="flex flex-wrap justify-center gap-3">
               {[
-                'TensorFlow.js', 'MoveNet Thunder', 'Google Gemini 2.5',
-                'Sarvam AI', 'React 18', 'WebSockets', 'Prisma', 'Express',
+                'TensorFlow.js', 'MoveNet Lightning', 'Web Speech API',
+                'React 18', 'WebSockets', 'Prisma', 'Express', 'Tailwind CSS',
               ].map((tech) => (
                 <span
                   key={tech}

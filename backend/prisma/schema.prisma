@@ -14,6 +14,8 @@ model User {
   experience String    @default("beginner") // beginner | intermediate | advanced
   createdAt  DateTime  @default(now())
   sessions   Session[]
+  foodLogs   FoodLog[]
+  dietPlans  DietPlan[]
 }
 
 model Session {
@@ -52,4 +54,44 @@ model RepLog {
   formScore Float
   issues    String?  // JSON string array
   timestamp DateTime @default(now())
+}
+
+// ═══════════════════════════════════════════════════════════
+// Food Journal — photo-based Indian diet tracking
+// ═══════════════════════════════════════════════════════════
+
+model FoodLog {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  mealType     String   // breakfast | lunch | dinner | snack
+  description  String?  // user note or detected food name
+  photoBase64  String?  // stored base64 image (compressed)
+  calories     Float?
+  protein      Float?   // grams
+  carbs        Float?   // grams
+  fat          Float?   // grams
+  fiber        Float?   // grams
+  items        String?  // JSON array of detected food items with per-item macros
+  aiAnalysis   String?  // raw Gemini response text
+  loggedAt     DateTime @default(now())
+}
+
+// ═══════════════════════════════════════════════════════════
+// Diet Plans — AI-generated Indian diet recommendations
+// ═══════════════════════════════════════════════════════════
+
+model DietPlan {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+  goal           String   // muscle_gain | fat_loss | maintenance | general_health
+  targetCalories Int?
+  targetProtein  Int?     // grams per day
+  targetCarbs    Int?     // grams per day
+  targetFat      Int?     // grams per day
+  planJson       String   // JSON: { meals: [{ time, name, items, macros }] }
+  aiRationale    String?  // why this plan was suggested
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
 }

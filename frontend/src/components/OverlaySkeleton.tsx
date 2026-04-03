@@ -1,6 +1,11 @@
 /**
  * OverlaySkeleton — Draws MoveNet skeleton on the camera canvas overlay.
  *
+ * Performance: Uses a persistent requestAnimationFrame loop that reads
+ * keypoints from a ref (updated at full detection FPS) rather than
+ * triggering React re-renders. This decouples smooth canvas drawing
+ * from React's reconciliation cycle.
+ *
  * Features:
  *  - Color-coded joints and limbs by form score
  *  - Real-time angle labels at key joints
@@ -8,7 +13,7 @@
  *  - Phase indicator on canvas
  */
 
-import { useEffect } from 'react';
+import { useEffect, useRef, memo } from 'react';
 import type { Keypoint, FrameScore, ExerciseDefinition, AngleConstraint } from '../types';
 import {
   SKELETON_CONNECTIONS,
@@ -23,6 +28,8 @@ import type { JointName } from '../types';
 interface OverlaySkeletonProps {
   canvas: HTMLCanvasElement | null;
   keypoints: Keypoint[];
+  /** Direct ref to latest keypoints — enables smooth canvas drawing without React re-renders */
+  keypointsRef?: React.RefObject<Keypoint[]>;
   frameScore: FrameScore | null;
   exercise: ExerciseDefinition | null;
   width: number;
@@ -34,117 +41,159 @@ const MIN_CONFIDENCE = 0.15;
 const JOINT_RADIUS = 7;
 const LINE_WIDTH = 4;
 
-export function OverlaySkeleton({
+/**
+ * Memoized skeleton overlay — uses rAF loop for smooth drawing.
+ * Only re-creates the draw loop when canvas, exercise, or dimensions change.
+ * Reads keypoints and frameScore from refs so React state throttling doesn't
+ * affect drawing smoothness.
+ */
+export const OverlaySkeleton = memo(function OverlaySkeleton({
   canvas,
   keypoints,
+  keypointsRef,
   frameScore,
   exercise,
   width,
   height,
 }: OverlaySkeletonProps) {
+  // Store latest values in refs so the rAF loop always has current data
+  // without needing React state dependencies
+  const frameScoreRef = useRef(frameScore);
+  const exerciseRef = useRef(exercise);
+  const fallbackKeypointsRef = useRef(keypoints);
+
+  frameScoreRef.current = frameScore;
+  exerciseRef.current = exercise;
+  fallbackKeypointsRef.current = keypoints;
+
   useEffect(() => {
-    if (!canvas || keypoints.length === 0) return;
+    if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    ctx.clearRect(0, 0, width, height);
+    let running = true;
 
-    // Build per-limb color map based on exercise angle constraints
-    const limbColorMap = exercise && frameScore
-      ? buildLimbColorMap(keypoints, exercise, frameScore.phase)
-      : null;
-    const defaultColor = frameScore
-      ? scoreToGradientColor(frameScore.scorePercent)
-      : '#22c55e';
+    function draw() {
+      if (!running || !ctx) return;
 
-    // Draw connections (limbs) with per-limb coloring
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
+      // Read latest keypoints from ref (full speed) or fallback to state
+      const kps = keypointsRef?.current ?? fallbackKeypointsRef.current;
+      const fs = frameScoreRef.current;
+      const ex = exerciseRef.current;
 
-    for (const [jointA, jointB] of SKELETON_CONNECTIONS) {
-      const a = getKeypointByName(keypoints, jointA, MIN_CONFIDENCE);
-      const b = getKeypointByName(keypoints, jointB, MIN_CONFIDENCE);
-      if (!a || !b) continue;
+      ctx.clearRect(0, 0, width, height);
 
-      const limbKey = `${jointA}-${jointB}`;
-      const limbColor = limbColorMap?.get(limbKey) ?? defaultColor;
+      if (kps.length === 0) {
+        requestAnimationFrame(draw);
+        return;
+      }
 
-      // Glow effect for the limb
-      ctx.save();
-      ctx.shadowColor = limbColor;
-      ctx.shadowBlur = 8;
-      ctx.strokeStyle = limbColor;
-      ctx.lineWidth = LINE_WIDTH + 2;
-      ctx.globalAlpha = 0.3;
-      ctx.beginPath();
-      ctx.moveTo(a.x, a.y);
-      ctx.lineTo(b.x, b.y);
-      ctx.stroke();
-      ctx.restore();
+      // Build per-limb color map based on exercise angle constraints
+      const limbColorMap = ex && fs
+        ? buildLimbColorMap(kps, ex, fs.phase)
+        : null;
+      const defaultColor = fs
+        ? scoreToGradientColor(fs.scorePercent)
+        : '#22c55e';
 
-      // Main limb line
-      ctx.strokeStyle = limbColor;
-      ctx.lineWidth = LINE_WIDTH;
-      ctx.globalAlpha = 0.9;
-      ctx.beginPath();
-      ctx.moveTo(a.x, a.y);
-      ctx.lineTo(b.x, b.y);
-      ctx.stroke();
+      // Draw connections (limbs) with per-limb coloring
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      for (const [jointA, jointB] of SKELETON_CONNECTIONS) {
+        const a = getKeypointByName(kps, jointA, MIN_CONFIDENCE);
+        const b = getKeypointByName(kps, jointB, MIN_CONFIDENCE);
+        if (!a || !b) continue;
+
+        const limbKey = `${jointA}-${jointB}`;
+        const limbColor = limbColorMap?.get(limbKey) ?? defaultColor;
+
+        // Glow effect for the limb
+        ctx.save();
+        ctx.shadowColor = limbColor;
+        ctx.shadowBlur = 8;
+        ctx.strokeStyle = limbColor;
+        ctx.lineWidth = LINE_WIDTH + 2;
+        ctx.globalAlpha = 0.3;
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+        ctx.restore();
+
+        // Main limb line
+        ctx.strokeStyle = limbColor;
+        ctx.lineWidth = LINE_WIDTH;
+        ctx.globalAlpha = 0.9;
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+      }
+
+      // Draw keypoints (joints) with per-joint coloring
+      ctx.globalAlpha = 1;
+      for (let i = 0; i < kps.length; i++) {
+        const kp = kps[i];
+        if (kp.score !== undefined && kp.score < MIN_CONFIDENCE) continue;
+
+        const isPrimary = i >= 5;
+        const radius = isPrimary ? JOINT_RADIUS : JOINT_RADIUS * 0.6;
+
+        // Find best color for this joint from adjacent limbs
+        const jointName = Object.keys(JOINT_INDEX).find(k => JOINT_INDEX[k as JointName] === i) as JointName | undefined;
+        const jointColor = jointName && limbColorMap
+          ? getJointColor(jointName, limbColorMap, defaultColor)
+          : defaultColor;
+
+        // Outer glow ring
+        ctx.save();
+        ctx.shadowColor = jointColor;
+        ctx.shadowBlur = 6;
+        ctx.beginPath();
+        ctx.arc(kp.x, kp.y, radius + 2, 0, 2 * Math.PI);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.fill();
+        ctx.restore();
+
+        // Inner dot
+        ctx.beginPath();
+        ctx.arc(kp.x, kp.y, radius, 0, 2 * Math.PI);
+        ctx.fillStyle = jointColor;
+        ctx.fill();
+      }
+
+      // Draw angle labels at key joints
+      if (ex) {
+        drawAngleLabels(ctx, kps, ex);
+      }
+
+      // Draw score badge (top-left)
+      if (fs) {
+        drawScoreBadge(ctx, fs);
+      }
+
+      // Draw phase indicator (bottom-center)
+      if (fs) {
+        drawPhaseIndicator(ctx, fs.phase, width);
+      }
+
+      ctx.globalAlpha = 1;
+
+      requestAnimationFrame(draw);
     }
 
-    // Draw keypoints (joints) with per-joint coloring
-    ctx.globalAlpha = 1;
-    for (let i = 0; i < keypoints.length; i++) {
-      const kp = keypoints[i];
-      if (kp.score !== undefined && kp.score < MIN_CONFIDENCE) continue;
+    // Start the persistent draw loop
+    requestAnimationFrame(draw);
 
-      const isPrimary = i >= 5;
-      const radius = isPrimary ? JOINT_RADIUS : JOINT_RADIUS * 0.6;
-
-      // Find best color for this joint from adjacent limbs
-      const jointName = Object.keys(JOINT_INDEX).find(k => JOINT_INDEX[k as JointName] === i) as JointName | undefined;
-      const jointColor = jointName && limbColorMap
-        ? getJointColor(jointName, limbColorMap, defaultColor)
-        : defaultColor;
-
-      // Outer glow ring
-      ctx.save();
-      ctx.shadowColor = jointColor;
-      ctx.shadowBlur = 6;
-      ctx.beginPath();
-      ctx.arc(kp.x, kp.y, radius + 2, 0, 2 * Math.PI);
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-      ctx.fill();
-      ctx.restore();
-
-      // Inner dot
-      ctx.beginPath();
-      ctx.arc(kp.x, kp.y, radius, 0, 2 * Math.PI);
-      ctx.fillStyle = jointColor;
-      ctx.fill();
-    }
-
-    // Draw angle labels at key joints
-    if (exercise) {
-      drawAngleLabels(ctx, keypoints, exercise);
-    }
-
-    // Draw score badge (top-left)
-    if (frameScore) {
-      drawScoreBadge(ctx, frameScore);
-    }
-
-    // Draw phase indicator (bottom-center)
-    if (frameScore) {
-      drawPhaseIndicator(ctx, frameScore.phase, width);
-    }
-
-    ctx.globalAlpha = 1;
-  }, [canvas, keypoints, frameScore, exercise, width, height]);
+    return () => { running = false; };
+  // Only restart loop when canvas/dimensions/exercise identity changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canvas, exercise?.id, width, height]);
 
   return null;
-}
+});
 
 function drawAngleLabels(
   ctx: CanvasRenderingContext2D,

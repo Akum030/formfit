@@ -6,21 +6,26 @@
  *  - /history → Workout history
  */
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, lazy, Suspense, Component } from 'react';
+import type { ReactNode, ErrorInfo } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useSearchParams } from 'react-router-dom';
 import { CameraView, type CameraViewRef } from './components/CameraView';
 import { OverlaySkeleton } from './components/OverlaySkeleton';
 import { SessionControls } from './components/SessionControls';
-import { HistoryView } from './components/HistoryView';
 import { Navbar } from './components/Navbar';
 import { HomePage } from './pages/HomePage';
 import { useMoveNet } from './hooks/useMoveNet';
 import { useFormScoring } from './hooks/useFormScoring';
 import { useVoiceAgent } from './hooks/useVoiceAgent';
 import { useGeminiAnalysis } from './hooks/useGeminiAnalysis';
+import { PoseGuide } from './components/PoseGuide';
 import { EXERCISES, getExerciseById } from './data/exercises';
 import type { ExerciseSummary, CoachingMessage } from './types';
 
+// Lazy-load routes that aren't needed on initial page load
+const FoodJournalPage = lazy(() => import('./pages/FoodJournalPage').then(m => ({ default: m.FoodJournalPage })));
+const DietPlanPage = lazy(() => import('./pages/DietPlanPage').then(m => ({ default: m.DietPlanPage })));
+const HistoryView = lazy(() => import('./components/HistoryView').then(m => ({ default: m.HistoryView })));
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
 const exerciseSummaries: ExerciseSummary[] = EXERCISES.map((e) => ({
@@ -44,9 +49,19 @@ function WorkoutPage() {
   const [isPaused, setIsPaused] = useState(false);
   const [lastCoaching, setLastCoaching] = useState<CoachingMessage | null>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
-  const [language, setLanguage] = useState<string>(() => localStorage.getItem('gym-language') || 'hi-IN');
+  const [language, setLanguage] = useState<string>(() => localStorage.getItem('gym-language') || 'en-IN');
   const [isResting, setIsResting] = useState(false);
   const [restTimeLeft, setRestTimeLeft] = useState(0);
+
+  // Cleanup countdown timer on unmount to prevent state updates on unmounted component
+  const countdownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const countdownTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    return () => {
+      if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
+      if (countdownTimeoutRef.current) clearTimeout(countdownTimeoutRef.current);
+    };
+  }, []);
 
   // Auto-select exercise from URL query param (e.g. /workout?exercise=squat)
   useEffect(() => {
@@ -56,10 +71,18 @@ function WorkoutPage() {
 
   const selectedExercise = selectedExerciseId ? getExerciseById(selectedExerciseId) ?? null : null;
 
-  // MoveNet
-  const { keypoints, isLoading: isModelLoading, isReady: isModelReady, fps, startDetection, stopDetection } = useMoveNet();
+  // MoveNet — keypointsRef provides full-speed access for canvas drawing
+  const { keypoints, keypointsRef, isLoading: isModelLoading, isReady: isModelReady, fps, startDetection, stopDetection } = useMoveNet();
 
-  // Form Scoring
+  // Form Scoring — with coaching callback for spoken feedback from pose/rep events
+  // The speakCoachingRef bridges useFormScoring (defined first) to useVoiceAgent (defined after)
+  const speakCoachingRef = useRef<(text: string) => void>(() => {});
+
+  const handleFormCoaching = useCallback((text: string) => {
+    speakCoachingRef.current(text);
+    setLastCoaching({ text, audioBase64: '', trigger: 'form' });
+  }, []);
+
   const {
     frameScore, repScores, repCount, setNumber, phase, avgSessionScore,
     currentIssues, incrementSet,
@@ -68,6 +91,7 @@ function WorkoutPage() {
     keypoints,
     sessionId,
     isActive: isSessionActive && !isPaused && !isResting,
+    onCoachingText: handleFormCoaching,
   });
 
   // Voice Agent
@@ -75,12 +99,15 @@ function WorkoutPage() {
     setLastCoaching(msg);
   }, []);
 
-  const { voiceState, lastTranscript, isMuted, toggleMute, playCoachingAudio } = useVoiceAgent({
+  const { voiceState, lastTranscript, isMuted, toggleMute, speakText, speakCoaching } = useVoiceAgent({
     sessionId,
     isActive: isSessionActive,
     language,
     onCoaching: handleCoaching,
   });
+
+  // Wire up the coaching ref so useFormScoring callbacks can speak via browser TTS
+  speakCoachingRef.current = speakText;
 
   // Gemini AI Analysis
   const { aiAnalysis, aiScore, aiTip, isAnalyzing } = useGeminiAnalysis({
@@ -149,10 +176,21 @@ function WorkoutPage() {
     return () => clearInterval(timer);
   }, [isResting, incrementSet]);
 
-  // Camera ready → start MoveNet
+  // Track the video element so we can start detection when model finishes loading
+  const videoElementRef = useRef<HTMLVideoElement | null>(null);
+
+  // Camera ready → start MoveNet (if model is already loaded)
   const handleVideoReady = useCallback((video: HTMLVideoElement) => {
+    videoElementRef.current = video;
     if (isModelReady) {
       startDetection(video);
+    }
+  }, [isModelReady, startDetection]);
+
+  // Fix race condition: if model loads AFTER camera started, start detection now
+  useEffect(() => {
+    if (isModelReady && videoElementRef.current && videoElementRef.current.readyState >= 2) {
+      startDetection(videoElementRef.current);
     }
   }, [isModelReady, startDetection]);
 
@@ -190,8 +228,9 @@ function WorkoutPage() {
           const coachData = await coachRes.json();
           if (coachData.coaching) {
             setLastCoaching(coachData.coaching);
-            if (coachData.coaching.audioBase64) {
-              playCoachingAudio(coachData.coaching.audioBase64);
+            // Speak coaching — use natural Sarvam audio if available, else browser TTS
+            if (coachData.coaching.text) {
+              speakCoaching(coachData.coaching.text, coachData.coaching.audioBase64);
             }
           }
         }
@@ -207,17 +246,20 @@ function WorkoutPage() {
     setIsSessionActive(false);
     // Start countdown: 3, 2, 1, GO!
     setCountdown(3);
+    if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
     const countdownTimer = setInterval(() => {
       setCountdown((prev) => {
         if (prev === null || prev <= 1) {
           clearInterval(countdownTimer);
+          countdownTimerRef.current = null;
           if (prev === 1) {
             // Show "GO!" briefly then activate
             setCountdown(0);
-            setTimeout(() => {
+            countdownTimeoutRef.current = setTimeout(() => {
               setCountdown(null);
               setIsSessionActive(true);
               setIsPaused(false);
+              countdownTimeoutRef.current = null;
             }, 700);
           }
           return prev === 1 ? 0 : null;
@@ -225,9 +267,15 @@ function WorkoutPage() {
         return prev - 1;
       });
     }, 1000);
-  }, [selectedExerciseId, playCoachingAudio]);
+    countdownTimerRef.current = countdownTimer;
+  }, [selectedExerciseId, speakText, speakCoaching, language]);
 
-  // End session
+  // End session — use refs for score/reps to avoid re-creating callback on every frame
+  const avgSessionScoreRef = useRef(avgSessionScore);
+  const repCountRef = useRef(repCount);
+  avgSessionScoreRef.current = avgSessionScore;
+  repCountRef.current = repCount;
+
   const handleEndSession = useCallback(async () => {
     if (sessionId) {
       try {
@@ -235,8 +283,8 @@ function WorkoutPage() {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            avgFormScore: avgSessionScore,
-            totalReps: repCount,
+            avgFormScore: avgSessionScoreRef.current,
+            totalReps: repCountRef.current,
           }),
         });
         await fetch(`${API_BASE}/api/coaching/stop`, {
@@ -255,7 +303,7 @@ function WorkoutPage() {
     setRestTimeLeft(0);
     setCompletionTriggered.current = false;
     stopDetection();
-  }, [sessionId, avgSessionScore, repCount, stopDetection]);
+  }, [sessionId, stopDetection]);
 
   // Keep ref updated for use in effects defined before handleEndSession
   endSessionRef.current = handleEndSession;
@@ -280,61 +328,72 @@ function WorkoutPage() {
     <div className="flex-1 flex flex-col relative z-[1]">
       {/* Main content */}
       <div className="flex-1 flex flex-col lg:flex-row p-2 gap-2 overflow-hidden" style={{ height: 'calc(100vh - 4rem)' }}>
-        {/* Camera + Overlay */}
-        <div className="flex-1 flex items-center justify-center min-h-0">
-          <CameraView
-            ref={cameraRef}
-            onVideoReady={handleVideoReady}
-            width={CAMERA_WIDTH}
-            height={CAMERA_HEIGHT}
-            mirrored={true}
-          >
-            <OverlaySkeleton
-              canvas={cameraRef.current?.getCanvas() ?? null}
-              keypoints={keypoints}
-              frameScore={frameScore}
-              exercise={selectedExercise}
+        {/* Left: Camera + Pose Guide side-by-side */}
+        <div className="flex-1 flex flex-col md:flex-row gap-2 min-h-0">
+          {/* Camera + Overlay */}
+          <div className="flex-1 flex items-center justify-center min-h-0">
+            <CameraView
+              ref={cameraRef}
+              onVideoReady={handleVideoReady}
               width={CAMERA_WIDTH}
               height={CAMERA_HEIGHT}
               mirrored={true}
-            />
+            >
+              <OverlaySkeleton
+                canvas={cameraRef.current?.getCanvas() ?? null}
+                keypoints={keypoints}
+                keypointsRef={keypointsRef}
+                frameScore={frameScore}
+                exercise={selectedExercise}
+                width={CAMERA_WIDTH}
+                height={CAMERA_HEIGHT}
+                mirrored={true}
+              />
 
-            {/* Paused overlay */}
-            {isPaused && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-10">
-                <div className="text-white text-3xl font-bold">PAUSED</div>
-              </div>
-            )}
+              {/* Paused overlay */}
+              {isPaused && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-10">
+                  <div className="text-white text-3xl font-bold">PAUSED</div>
+                </div>
+              )}
 
-            {/* Countdown overlay */}
-            {countdown !== null && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-20">
-                <div className="text-center">
-                  <div className="text-8xl font-black text-white animate-pulse drop-shadow-[0_0_30px_rgba(16,185,129,0.6)]">
-                    {countdown === 0 ? 'GO!' : countdown}
-                  </div>
-                  <div className="text-white/60 text-lg mt-4 font-medium">
-                    {countdown > 0 ? 'Get Ready...' : ''}
+              {/* Countdown overlay */}
+              {countdown !== null && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-20">
+                  <div className="text-center">
+                    <div className="text-8xl font-black text-white animate-pulse drop-shadow-[0_0_30px_rgba(16,185,129,0.6)]">
+                      {countdown === 0 ? 'GO!' : countdown}
+                    </div>
+                    <div className="text-white/60 text-lg mt-4 font-medium">
+                      {countdown > 0 ? 'Get Ready...' : ''}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Rest timer overlay on camera */}
-            {isResting && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-15">
-                <div className="text-center">
-                  <div className="text-cyan-400 text-sm font-bold uppercase tracking-wider mb-2">REST</div>
-                  <div className="text-7xl font-black text-white font-mono drop-shadow-[0_0_20px_rgba(6,182,212,0.4)]">
-                    {restTimeLeft}s
-                  </div>
-                  <div className="text-white/50 text-sm mt-3">
-                    Set {setNumber} complete — next set soon
+              {/* Rest timer overlay on camera */}
+              {isResting && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-15">
+                  <div className="text-center">
+                    <div className="text-cyan-400 text-sm font-bold uppercase tracking-wider mb-2">REST</div>
+                    <div className="text-7xl font-black text-white font-mono drop-shadow-[0_0_20px_rgba(6,182,212,0.4)]">
+                      {restTimeLeft}s
+                    </div>
+                    <div className="text-white/50 text-sm mt-3">
+                      Set {setNumber} complete — next set soon
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </CameraView>
+              )}
+            </CameraView>
+          </div>
+
+          {/* Pose Guide — large panel beside camera, same aspect ratio */}
+          {isSessionActive && selectedExerciseId && (
+            <div className="flex-1 flex items-center justify-center min-h-0">
+              <PoseGuide exerciseId={selectedExerciseId} phase={phase} fullSize />
+            </div>
+          )}
         </div>
 
         {/* Controls sidebar */}
@@ -387,16 +446,70 @@ function HistoryRoute() {
   return <HistoryView onBack={() => navigate('/')} />;
 }
 
+// Error boundary catches lazy-load chunk failures (e.g. bad network) and lets user retry
+class RouteErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(_: Error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('[RouteErrorBoundary]', error, info);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex-1 flex flex-col items-center justify-center gap-4 p-8">
+          <div className="text-red-400 text-lg font-bold">Failed to load page</div>
+          <p className="text-white/40 text-sm text-center max-w-sm">
+            This usually means a network error while loading the page. Check your connection and try again.
+          </p>
+          <button
+            onClick={() => this.setState({ hasError: false })}
+            className="px-6 py-2.5 rounded-xl bg-emerald-500/20 text-emerald-400 font-bold text-sm border border-emerald-500/30 hover:bg-emerald-500/30 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+// Loading spinner for lazy routes
+function RouteLoader() {
+  return (
+    <div className="flex-1 flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <BrowserRouter>
         <div className="min-h-screen bg-gym-900 flex flex-col dynamic-bg">
         <Navbar />
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/workout" element={<WorkoutPage />} />
-          <Route path="/history" element={<HistoryRoute />} />
-        </Routes>
+        <RouteErrorBoundary>
+        <Suspense fallback={<RouteLoader />}>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/workout" element={<WorkoutPage />} />
+            <Route path="/history" element={<HistoryRoute />} />
+            <Route path="/food-journal" element={<FoodJournalPage />} />
+            <Route path="/diet-plan" element={<DietPlanPage />} />
+          </Routes>
+        </Suspense>
+        </RouteErrorBoundary>
       </div>
     </BrowserRouter>
   );
