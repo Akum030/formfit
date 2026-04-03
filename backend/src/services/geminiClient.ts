@@ -10,10 +10,9 @@ import { GoogleGenerativeAI, type GenerativeModel } from '@google/generative-ai'
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 
-// gemini-2.0-flash: cheapest model that still gives excellent results.
-// Avoid gemini-2.5-flash — it has "thinking" tokens ($3.50/1M) that explode costs.
-// Fallback to gemini-2.0-flash-lite if primary is rate-limited.
-const MODEL_CHAIN = (process.env.GEMINI_MODEL_NAME || 'gemini-2.0-flash,gemini-2.0-flash-lite').split(',');
+// Model fallback chain — each model has separate quota limits on the free tier.
+// If the primary model is rate-limited, we cascade to the next one.
+const MODEL_CHAIN = (process.env.GEMINI_MODEL_NAME || 'gemini-2.5-flash,gemini-2.5-flash-lite,gemini-2.0-flash').split(',');
 
 // Track which model index is currently working to avoid retrying exhausted ones
 let activeModelIdx = 0;
