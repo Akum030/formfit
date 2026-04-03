@@ -93,9 +93,9 @@ export function keypointDistance(a: Keypoint, b: Keypoint): number {
 }
 
 /** Check if enough keypoints are visible for scoring. */
-export function hasMinimumKeypoints(keypoints: Keypoint[], minScore = 0.15): boolean {
+export function hasMinimumKeypoints(keypoints: Keypoint[], minScore = 0.1): boolean {
   const visible = keypoints.filter((kp) => kp.score !== undefined && kp.score >= minScore);
-  return visible.length >= 6; // Need at least 6 of 17 keypoints for partial body
+  return visible.length >= 5; // Need at least 5 of 17 keypoints for partial body
 }
 
 // ── Score Utilities ───────────────────────────────────────

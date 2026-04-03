@@ -33,14 +33,14 @@ interface UseMoveNetResult {
   stopDetection: () => void;
 }
 
-// Adaptive FPS: start at 12, drop to 8 if inference takes > 80ms
-const TARGET_FPS = 12;
-const MIN_FPS = 8;
+// Adaptive FPS: start at 15, drop to 10 if inference takes > 80ms
+const TARGET_FPS = 15;
+const MIN_FPS = 10;
 const SLOW_INFERENCE_MS = 80;
 
 // Throttle React state updates to prevent re-render cascade
-// 250ms = ~4 updates/sec (enough for UI elements like score display)
-const STATE_UPDATE_INTERVAL_MS = 250;
+// 200ms = ~5 updates/sec (enough for UI elements like score display)
+const STATE_UPDATE_INTERVAL_MS = 200;
 
 export function useMoveNet(): UseMoveNetResult {
   const [keypoints, setKeypoints] = useState<Keypoint[]>([]);

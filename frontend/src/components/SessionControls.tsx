@@ -33,7 +33,6 @@ interface SessionControlsProps {
   voiceState: VoiceState;
   isMuted: boolean;
   onToggleMute: () => void;
-  lastTranscript: string;
   lastCoaching: CoachingMessage | null;
   isModelLoading: boolean;
   isModelReady: boolean;
@@ -85,7 +84,6 @@ export const SessionControls = memo(function SessionControls({
   voiceState,
   isMuted,
   onToggleMute,
-  lastTranscript,
   lastCoaching,
   isModelLoading,
   isModelReady,
@@ -173,7 +171,6 @@ export const SessionControls = memo(function SessionControls({
             voiceState={voiceState}
             isMuted={isMuted}
             onToggleMute={onToggleMute}
-            lastTranscript={lastTranscript}
           />
 
           {/* Session Controls — always at bottom */}
@@ -455,9 +452,9 @@ function IssuesPanel({ issues }: { issues: string[] }) {
 
 // ── Coach Chat Bubble ───────────────────────────────
 
-function CoachBubble({ lastCoaching, voiceState, isMuted, onToggleMute, lastTranscript }: {
+function CoachBubble({ lastCoaching, voiceState, isMuted, onToggleMute }: {
   lastCoaching: CoachingMessage | null; voiceState: VoiceState;
-  isMuted: boolean; onToggleMute: () => void; lastTranscript: string;
+  isMuted: boolean; onToggleMute: () => void;
 }) {
   const [displayText, setDisplayText] = useState('');
   const targetText = useRef('');
@@ -492,9 +489,7 @@ function CoachBubble({ lastCoaching, voiceState, isMuted, onToggleMute, lastTran
             <div className="flex items-center gap-1">
               <VoiceIndicator state={voiceState} />
               <span className="text-white/40 text-[10px]">
-                {voiceState === 'listening' ? 'Listening' :
-                 voiceState === 'speaking' ? 'Speaking' :
-                 voiceState === 'processing' ? 'Thinking' : 'Ready'}
+                {voiceState === 'speaking' ? 'Speaking' : 'Ready'}
               </span>
             </div>
           </div>
@@ -507,7 +502,7 @@ function CoachBubble({ lastCoaching, voiceState, isMuted, onToggleMute, lastTran
               : 'bg-white/[0.05] text-white/50 hover:bg-white/[0.1]'
           }`}
         >
-          {isMuted ? 'OFF' : 'MIC'}
+          {isMuted ? '🔇' : '🔊'}
         </button>
       </div>
 
@@ -527,33 +522,11 @@ function CoachBubble({ lastCoaching, voiceState, isMuted, onToggleMute, lastTran
         </div>
       )}
 
-      {lastTranscript && (
-        <div className="flex items-start gap-2">
-          <span className="text-white/30 text-[10px] mt-0.5">You:</span>
-          <span className="text-white/40 text-xs">{lastTranscript}</span>
-        </div>
-      )}
     </div>
   );
 }
 
 function VoiceIndicator({ state }: { state: VoiceState }) {
-  if (state === 'listening') {
-    return (
-      <div className="flex items-center gap-[2px]">
-        {[0, 1, 2].map((i) => (
-          <div
-            key={i}
-            className="w-[3px] bg-red-400 rounded-sm"
-            style={{
-              height: '8px',
-              animation: `voice-bar 0.6s ease-in-out ${i * 0.15}s infinite alternate`,
-            }}
-          />
-        ))}
-      </div>
-    );
-  }
   if (state === 'speaking') {
     return (
       <div className="flex items-center gap-[2px]">

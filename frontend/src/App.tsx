@@ -99,7 +99,7 @@ function WorkoutPage() {
     setLastCoaching(msg);
   }, []);
 
-  const { voiceState, lastTranscript, isMuted, toggleMute, speakText, speakCoaching } = useVoiceAgent({
+  const { voiceState, isMuted, toggleMute, speakText, speakCoaching } = useVoiceAgent({
     sessionId,
     isActive: isSessionActive,
     language,
@@ -268,7 +268,7 @@ function WorkoutPage() {
       });
     }, 1000);
     countdownTimerRef.current = countdownTimer;
-  }, [selectedExerciseId, speakText, speakCoaching, language]);
+  }, [selectedExerciseId, speakCoaching, language]);
 
   // End session — use refs for score/reps to avoid re-creating callback on every frame
   const avgSessionScoreRef = useRef(avgSessionScore);
@@ -420,7 +420,6 @@ function WorkoutPage() {
               voiceState={voiceState}
               isMuted={isMuted}
               onToggleMute={toggleMute}
-              lastTranscript={lastTranscript}
               lastCoaching={lastCoaching}
               isModelLoading={isModelLoading}
               isModelReady={isModelReady}

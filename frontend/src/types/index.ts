@@ -145,7 +145,7 @@ export interface CoachingMessage {
 
 // ── Voice ─────────────────────────────────────────────────
 
-export type VoiceState = 'idle' | 'listening' | 'processing' | 'speaking' | 'error';
+export type VoiceState = 'idle' | 'speaking';
 
 export interface VoiceMessage {
   type: 'ready' | 'transcript' | 'coaching' | 'interrupted' | 'pong';

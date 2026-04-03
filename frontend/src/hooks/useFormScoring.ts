@@ -12,7 +12,7 @@ import type {
 } from '../types';
 import { computeAngle, hasMinimumKeypoints, getKeypointByName } from '../utils/pose';
 
-const VISIBILITY_CONFIDENCE = 0.15;
+const VISIBILITY_CONFIDENCE = 0.1;
 
 interface UseFormScoringOptions {
   exercise: ExerciseDefinition | null;
@@ -135,9 +135,9 @@ export function useFormScoring({
       }
     }
 
-    // Send pose event to backend periodically (every 3 seconds to reduce load)
+    // Send pose event to backend periodically (every 2 seconds for responsive coaching)
     const now = Date.now();
-    if (sessionId && now - lastEventTime.current > 3000) {
+    if (sessionId && now - lastEventTime.current > 2000) {
       lastEventTime.current = now;
       sendPoseEvent(sessionId, fs.scorePercent, fs.issues, onCoachingTextRef.current);
     }
