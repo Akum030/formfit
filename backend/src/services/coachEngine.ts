@@ -19,6 +19,9 @@
  *  - Urgent interruption: every 3s for dangerously bad form
  */
 
+// getCoachingFeedback is intentionally NOT used for auto-coaching \u2014 we use rich
+// offline pools instead to keep Gemini costs near zero (~$0.005/session).
+// It remains available for future user-speech Q&A if STT is ever re-enabled.
 import { getCoachingFeedback, resetChatSession, type CoachingContext } from './geminiClient';
 import { textToSpeech } from './sarvamClient';
 
@@ -279,21 +282,12 @@ export class CoachEngine {
   // ─── Core coaching generation ─────────────────────────────────
 
   private async generateCoaching(trigger: CoachResponse['trigger']): Promise<CoachResponse | null> {
-    this.abortController = new AbortController();
-
-    let text: string;
-    try {
-      text = await getCoachingFeedback(this.sessionState, this.sessionId);
-      if (this.abortController.signal.aborted) return null;
-    } catch {
-      if (this.abortController?.signal.aborted) return null;
-      text = this.getFallbackCoaching(trigger);
-      if (!text) return null;
-    }
-
+    // Use our rich offline coaching pools rather than calling Gemini for every rep/form event.
+    // Gemini is reserved for pose ANALYSIS (AI Insights panel) — not wasted on 1-2 sentence coach lines.
+    // This keeps API costs at ~$0.005 per 10-min session (40 analysis calls only).
+    const text = this.getFallbackCoaching(trigger);
+    if (!text) return null;
     const audioBase64 = await this.tryTTS(text);
-    if (this.abortController?.signal.aborted) return null;
-    this.abortController = null;
     return { text, audioBase64, trigger };
   }
 

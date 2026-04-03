@@ -38,9 +38,17 @@ interface UseGeminiAnalysisResult {
 }
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
-const ANALYSIS_INTERVAL_MS = 5000;
+
+// 15s interval — AI panel refreshes every 15s. Local angle scoring handles real-time feedback.
+// At 15s intervals a 10-min session = ~40 API calls → ~$0.005 (half a cent).
+const ANALYSIS_INTERVAL_MS = 15000;
+
 // Stop calling API after this many consecutive failures (likely auth error)
 const MAX_CONSECUTIVE_FAILURES = 3;
+
+// Hard cap: never exceed 50 Gemini calls per session (~12 mins at 15s)
+// Prevents runaway costs if a session runs very long.
+const MAX_CALLS_PER_SESSION = 50;
 
 export function useGeminiAnalysis({
   exercise,
@@ -54,8 +62,11 @@ export function useGeminiAnalysis({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const lastAnalysisTime = useRef(0);
   const previousAnalysis = useRef<GeminiAnalysis | null>(null);
-  /** Tracks consecutive API failures to detect auth issues */
   const consecutiveFailures = useRef(0);
+  /** Total calls this session — hard cap at MAX_CALLS_PER_SESSION */
+  const sessionCallCount = useRef(0);
+  /** Last phase we analyzed — skip if phase hasn’t changed AND interval hasn’t doubled */
+  const lastAnalyzedPhase = useRef<string>('');
 
   const computeAllAngles = useCallback(
     (kps: Keypoint[]): Record<string, number> => {
@@ -121,18 +132,25 @@ export function useGeminiAnalysis({
     // Skip API calls for local/offline sessions — no backend to call
     if (sessionId.startsWith('local-')) return;
 
+    // Hard cap: don't exceed budget per session
+    if (sessionCallCount.current >= MAX_CALLS_PER_SESSION) return;
+
     // Stop calling if API consistently fails (likely invalid key)
     if (consecutiveFailures.current >= MAX_CONSECUTIVE_FAILURES) return;
 
     const now = Date.now();
-    if (now - lastAnalysisTime.current < ANALYSIS_INTERVAL_MS) return;
+    const phaseChanged = currentPhase !== lastAnalyzedPhase.current;
+    // Fire immediately on phase change (high-value signal), otherwise wait 15s
+    if (!phaseChanged && now - lastAnalysisTime.current < ANALYSIS_INTERVAL_MS) return;
     lastAnalysisTime.current = now;
+    lastAnalyzedPhase.current = currentPhase;
 
     const angles = computeAllAngles(keypoints);
     if (Object.keys(angles).length < 2) return; // Not enough data
 
     const keypointPositions = computeKeypointPositions(keypoints);
 
+    sessionCallCount.current++;
     setIsAnalyzing(true);
 
     fetch(`${API_BASE}/api/events/analyze`, {
@@ -181,12 +199,15 @@ export function useGeminiAnalysis({
   useEffect(() => {
     setAiAnalysis(null);
     previousAnalysis.current = null;
-    consecutiveFailures.current = 0; // Give the API another chance with new exercise
+    consecutiveFailures.current = 0;
+    lastAnalyzedPhase.current = '';
   }, [exercise?.id]);
 
-  // Reset failure counter when session changes (new coaching session = fresh start)
+  // Reset all counters when session changes (new session = fresh budget)
   useEffect(() => {
     consecutiveFailures.current = 0;
+    sessionCallCount.current = 0;
+    lastAnalyzedPhase.current = '';
   }, [sessionId]);
 
   return {
